@@ -92,7 +92,7 @@ export default function Clients() {
         name: formData.name,
         email: formData.email || null,
         address: formData.address || null,
-        default_rate: parseFloat(formData.default_rate) || 0,
+        default_rate: formData.default_rate,
         template_type: formData.template_type,
         invoice_prefix: formData.invoice_prefix,
         company_context: formData.company_context || null,

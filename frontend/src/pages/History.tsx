@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { invoicesApi, clientsApi } from '../services/api';
-import type { Invoice, Client } from '../types';
+import type { Invoice, Client, InvoiceStatus } from '../types';
 
 export default function History() {
   const navigate = useNavigate();
@@ -141,12 +141,12 @@ export default function History() {
     }
   };
 
-  const handleStatusChange = async (invoiceId: string, newStatus: string) => {
+  const handleStatusChange = async (invoiceId: string, newStatus: InvoiceStatus) => {
     try {
       await invoicesApi.update(invoiceId, { status: newStatus });
       setInvoices((prev) =>
         prev.map((inv) =>
-          inv.id === invoiceId ? { ...inv, status: newStatus as Invoice['status'] } : inv
+          inv.id === invoiceId ? { ...inv, status: newStatus } : inv
         )
       );
       setStatusMenuOpen(null);
@@ -155,7 +155,7 @@ export default function History() {
     }
   };
 
-  const statusOptions = [
+  const statusOptions: { value: InvoiceStatus; label: string; color: string }[] = [
     { value: 'draft', label: 'Draft', color: 'bg-gray-100 text-gray-800' },
     { value: 'generated', label: 'Generated', color: 'bg-blue-100 text-blue-800' },
     { value: 'sent', label: 'Sent', color: 'bg-yellow-100 text-yellow-800' },

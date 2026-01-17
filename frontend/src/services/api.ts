@@ -7,7 +7,6 @@ import type { AxiosInstance, AxiosError } from 'axios';
 import type {
   Client,
   Invoice,
-  InvoicePreview,
   ChatResponse,
   ChatSessionInfo,
   ChatSessionDetail,
