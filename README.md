@@ -56,7 +56,26 @@ The AI automatically uses the right template based on the client's settings.
 
 ## Getting Started
 
-### Prerequisites
+### Option A: Docker (Recommended)
+
+The easiest way to run locally - no system dependency setup needed.
+
+```bash
+# Start both backend and frontend
+docker-compose up
+
+# Or run in background
+docker-compose up -d
+```
+
+- Backend: http://localhost:8000
+- Frontend: http://localhost:5173
+
+> **Note:** You still need `backend/.env` with your credentials. Copy from `.env.example`.
+
+### Option B: Manual Setup
+
+#### Prerequisites
 
 - Python 3.11+
 - Node.js 18+
@@ -64,7 +83,7 @@ The AI automatically uses the right template based on the client's settings.
 - [uv](https://docs.astral.sh/uv/) (Python package manager)
 - WeasyPrint system dependencies (see below)
 
-### 1. Clone & Setup Backend
+#### 1. Clone & Setup Backend
 
 ```bash
 cd backend
@@ -87,9 +106,9 @@ The API runs at `http://localhost:8000`. View interactive docs at `/docs`.
 > **Why `./start.sh` instead of `uvicorn` directly?**  
 > WeasyPrint (the PDF library) requires native system libraries (Cairo, Pango, etc.). On macOS with Homebrew, these libraries are installed to `/opt/homebrew/lib`, but Python can't find them by default. The `start.sh` script sets `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib` before starting the server so WeasyPrint can locate these libraries.
 >
-> If you're on Linux or have libraries in the default path, you can run `uv run uvicorn app.main:app --reload` directly.
+> On Linux or Docker, run `uvicorn app.main:app --reload` directly.
 
-### 2. Setup Frontend
+#### 2. Setup Frontend
 
 ```bash
 cd frontend
@@ -103,9 +122,9 @@ npm run dev
 
 The app runs at `http://localhost:5173`.
 
-### WeasyPrint Dependencies (macOS)
+#### WeasyPrint Dependencies (macOS - manual setup only)
 
-WeasyPrint requires system libraries for PDF generation:
+If not using Docker, WeasyPrint requires system libraries:
 
 ```bash
 brew install pango cairo libffi gdk-pixbuf
@@ -132,15 +151,29 @@ Create `backend/.env` with:
 
 ## Deployment
 
-**Frontend** - Deploy to Netlify with auto-deploy from GitHub:
-- Build command: `npm run build`
-- Publish directory: `dist`
-- Set `VITE_API_URL` env var to your backend URL
+### Frontend (Netlify)
 
-**Backend** - Deploy to Render, Railway, or similar:
-- Use `uv run uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-- Set all environment variables
-- Ensure PostgreSQL addon is attached
+1. Connect repo, set **Base directory:** `frontend`
+2. **Build command:** `npm run build`
+3. **Publish directory:** `dist`
+4. **Environment variable:** `VITE_API_URL` = your backend URL
+
+### Backend (Render with Docker)
+
+1. Connect repo, set **Root directory:** `backend`
+2. **Environment:** Docker
+3. Render will auto-detect the `Dockerfile`
+4. **Environment variables:** See table below
+
+| Variable | Required | Example |
+|----------|----------|---------|
+| `DATABASE_URL` | ✅ | `postgresql://...` (Neon) |
+| `OPENROUTER_API_KEY` | ✅ | `sk-or-v1-...` |
+| `FRONTEND_URL` | ✅ | `https://your-app.netlify.app` |
+| `COMPANY_NAME` | ✅ | `Your Name` |
+| `AWS_ACCESS_KEY_ID` | | For image uploads |
+| `AWS_SECRET_ACCESS_KEY` | | For image uploads |
+| `AWS_S3_BUCKET` | | Your bucket name |
 
 ## Project Structure
 
