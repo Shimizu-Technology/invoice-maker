@@ -16,6 +16,25 @@ Docker packages your app and all its dependencies into a **container** - think o
 2. `docker-compose.yml` - Defines which containers to run and how they connect
 3. `docker-compose up` - Builds and starts everything
 
+### One Command, Multiple Services
+
+Normally you'd need two terminals:
+```
+Terminal 1: cd backend && ./start.sh
+Terminal 2: cd frontend && npm run dev
+```
+
+With Docker Compose, one command starts both:
+```
+docker-compose up
+```
+
+Both services run in separate containers, but their logs are merged in one terminal:
+```
+backend-1  | INFO: Uvicorn running on http://0.0.0.0:8000
+frontend-1 | VITE ready in 142 ms
+```
+
 ---
 
 ## Quick Start
@@ -61,6 +80,10 @@ docker-compose build --no-cache
 
 # Restart just backend
 docker-compose restart backend
+
+# Run services in separate terminals (if you prefer)
+docker-compose up backend      # Terminal 1
+docker-compose up frontend     # Terminal 2
 ```
 
 ## How It Works
