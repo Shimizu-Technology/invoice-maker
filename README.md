@@ -63,15 +63,14 @@ The easiest way to run locally - no system dependency setup needed.
 ```bash
 # Start both backend and frontend
 docker-compose up
-
-# Or run in background
-docker-compose up -d
 ```
 
 - Backend: http://localhost:8000
 - Frontend: http://localhost:5173
 
 > **Note:** You still need `backend/.env` with your credentials. Copy from `.env.example`.
+>
+> See [DOCKER.md](DOCKER.md) for detailed Docker guide.
 
 ### Option B: Manual Setup
 
