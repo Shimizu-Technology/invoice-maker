@@ -35,7 +35,7 @@ def calculate_invoice_total(
     return hours_total + items_total
 
 
-@router.get("/", response_model=List[InvoiceSummary])
+@router.get("", response_model=List[InvoiceSummary])
 async def list_invoices(
     client_id: Optional[str] = Query(None, description="Filter by client ID"),
     status: Optional[InvoiceStatus] = Query(None, description="Filter by status"),
@@ -59,7 +59,7 @@ async def list_invoices(
     return invoices
 
 
-@router.post("/", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
 async def create_invoice(invoice: InvoiceCreate, db: Session = Depends(get_db)):
     """Create a new invoice with hours entries or line items."""
     # Verify client exists

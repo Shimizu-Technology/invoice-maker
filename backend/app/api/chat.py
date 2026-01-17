@@ -202,7 +202,7 @@ async def delete_session(session_id: str, db: Session = Depends(get_db)):
     return {"message": "Session deleted"}
 
 
-@router.post("/", response_model=ChatResponse)
+@router.post("", response_model=ChatResponse)
 async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
     """
     Process a chat message for invoice creation.

@@ -11,14 +11,14 @@ from ..schemas.client import ClientCreate, ClientUpdate, ClientResponse
 router = APIRouter()
 
 
-@router.get("/", response_model=List[ClientResponse])
+@router.get("", response_model=List[ClientResponse])
 async def list_clients(db: Session = Depends(get_db)):
     """List all clients."""
     clients = db.query(Client).order_by(Client.name).all()
     return clients
 
 
-@router.post("/", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ClientResponse, status_code=status.HTTP_201_CREATED)
 async def create_client(client: ClientCreate, db: Session = Depends(get_db)):
     """Create a new client."""
     # Check if client with same name already exists
