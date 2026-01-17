@@ -9,6 +9,7 @@ app = FastAPI(
     title="Invoice Maker API",
     description="AI-powered invoice generator API",
     version="0.1.0",
+    redirect_slashes=False,  # Prevent 307 redirects that cause mixed-content issues
 )
 
 # CORS middleware for frontend
