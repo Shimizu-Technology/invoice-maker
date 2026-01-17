@@ -2,6 +2,22 @@
 
 Simple guide to running Invoice Maker with Docker.
 
+## What is Docker?
+
+Docker packages your app and all its dependencies into a **container** - think of it as a lightweight, portable box that has everything needed to run the app.
+
+**Why use it?**
+- ✅ **Same environment everywhere** - Works the same on your Mac, a coworker's Windows, or a cloud server
+- ✅ **No "works on my machine" problems** - All dependencies are bundled
+- ✅ **One command to start** - No installing Python, Node, WeasyPrint libraries separately
+
+**How it works:**
+1. `Dockerfile` - A recipe that describes how to build the container (install Python, add libraries, copy code)
+2. `docker-compose.yml` - Defines which containers to run and how they connect
+3. `docker-compose up` - Builds and starts everything
+
+---
+
 ## Quick Start
 
 ```bash
