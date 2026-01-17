@@ -1,0 +1,25 @@
+[project]
+name = "invoice-maker-backend"
+version = "0.1.0"
+description = "AI-powered invoice generator API"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.0",
+    "python-dotenv>=1.0.0",
+    "alembic>=1.14.0",
+    "openai>=1.0.0",
+    "weasyprint>=63.0",
+    "jinja2>=3.1.0",
+    "python-multipart>=0.0.20",
+    "pydantic-settings>=2.0.0",
+    "boto3>=1.35.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "httpx>=0.28.0",
+]

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{ invoice.invoice_number }}</title>
+    <style>
+        {% include 'base.css' %}
+    </style>
+</head>
+<body>
+    <div class="invoice-header">
+        <div class="company-info">
+            <div class="company-name">{{ user.name | default('Your Company Name') }}</div>
+            <div class="company-details">
+                {% if user.email %}{{ user.email }}<br>{% endif %}
+                {% if user.address %}{{ user.address }}{% endif %}
+            </div>
+        </div>
+        <div class="invoice-title">
+            <h1>INVOICE</h1>
+            <div class="invoice-number">{{ invoice.invoice_number }}</div>
+        </div>
+    </div>
+
+    <div class="bill-to">
+        <div class="bill-to-label">Bill To</div>
+        <div class="client-name">{{ client.name }}</div>
+        <div class="client-details">
+            {% if client.email %}{{ client.email }}<br>{% endif %}
+            {% if client.address %}{{ client.address }}<br>{% endif %}
+            {% if client.company_context %}{{ client.company_context }}{% endif %}
+        </div>
+    </div>
+
+    <div class="invoice-meta">
+        <div class="meta-item">
+            <div class="meta-label">Invoice Date</div>
+            <div class="meta-value">{{ invoice.date.strftime('%B %d, %Y') }}</div>
+        </div>
+        {% if installment_info %}
+        <div class="meta-item">
+            <div class="meta-label">Payment</div>
+            <div class="meta-value">{{ installment_info }}</div>
+        </div>
+        {% endif %}
+        <div class="meta-item">
+            <div class="meta-label">Total Due</div>
+            <div class="meta-value">${{ "%.2f"|format(invoice.total_amount) }}</div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th class="text-center">Qty</th>
+                <th class="text-right">Rate</th>
+                <th class="text-right">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in line_items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="text-center">{{ "%.2f"|format(item.quantity) if item.quantity != 1 else "1" }}</td>
+                <td class="text-right">${{ "%.2f"|format(item.rate) }}</td>
+                <td class="text-right">${{ "%.2f"|format(item.amount) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <div class="summary-row">
+            <span class="summary-label">Subtotal</span>
+            <span class="summary-value">${{ "%.2f"|format(subtotal) }}</span>
+        </div>
+        {% if discount %}
+        <div class="summary-row">
+            <span class="summary-label">Discount</span>
+            <span class="summary-value">-${{ "%.2f"|format(discount) }}</span>
+        </div>
+        {% endif %}
+        {% if tax %}
+        <div class="summary-row">
+            <span class="summary-label">Tax</span>
+            <span class="summary-value">${{ "%.2f"|format(tax) }}</span>
+        </div>
+        {% endif %}
+        <div class="summary-row total">
+            <span class="summary-label">Total Due</span>
+            <span class="summary-value">${{ "%.2f"|format(invoice.total_amount) }}</span>
+        </div>
+    </div>
+
+    {% if invoice.notes %}
+    <div class="notes">
+        <div class="notes-label">Notes</div>
+        <div class="notes-content">{{ invoice.notes }}</div>
+    </div>
+    {% endif %}
+
+    {% if client.payment_terms %}
+    <div class="notes">
+        <div class="notes-label">Payment Terms</div>
+        <div class="notes-content">{{ client.payment_terms }}</div>
+    </div>
+    {% endif %}
+
+    <div class="invoice-footer">
+        Thank you for your business!
+    </div>
+</body>
+</html>

@@ -1,0 +1,265 @@
+/* Base styles for all invoice PDF templates */
+
+@page {
+    size: letter;
+    margin: 0.5in 0.6in;  /* Reduced margins for more content space */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10pt;  /* Slightly smaller base font */
+    line-height: 1.3;  /* Tighter line height */
+    color: #333;
+}
+
+/* Header styles */
+.invoice-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #333;
+}
+
+.company-info {
+    text-align: left;
+}
+
+.company-name {
+    font-size: 16pt;
+    font-weight: bold;
+    color: #000;
+    margin-bottom: 3px;
+}
+
+.company-details {
+    font-size: 9pt;
+    color: #666;
+}
+
+.invoice-title {
+    text-align: right;
+}
+
+.invoice-title h1 {
+    font-size: 24pt;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+.invoice-number {
+    font-size: 11pt;
+    color: #666;
+}
+
+/* Bill To section */
+.bill-to {
+    margin-bottom: 15px;
+}
+
+.bill-to-label {
+    font-size: 9pt;
+    font-weight: bold;
+    color: #666;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+
+.client-name {
+    font-size: 12pt;
+    font-weight: bold;
+    color: #000;
+}
+
+.client-details {
+    font-size: 9pt;
+    color: #666;
+}
+
+/* Invoice meta info */
+.invoice-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding: 10px 15px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+}
+
+.meta-item {
+    text-align: center;
+}
+
+.meta-label {
+    font-size: 8pt;
+    font-weight: bold;
+    color: #666;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.meta-value {
+    font-size: 10pt;
+    color: #000;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+}
+
+th {
+    background-color: #333;
+    color: #fff;
+    font-weight: bold;
+    text-align: left;
+    padding: 6px 8px;
+    font-size: 8pt;
+    text-transform: uppercase;
+}
+
+td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #ddd;
+    font-size: 9pt;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* Summary section */
+.summary {
+    margin-left: auto;
+    width: 250px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.summary-row.total {
+    border-bottom: none;
+    border-top: 2px solid #333;
+    font-weight: bold;
+    font-size: 12pt;
+    padding-top: 8px;
+}
+
+.summary-label {
+    color: #666;
+}
+
+.summary-value {
+    font-weight: bold;
+}
+
+/* Notes section */
+.notes {
+    margin-top: 15px;
+    padding: 10px 12px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+}
+
+.notes-label {
+    font-size: 8pt;
+    font-weight: bold;
+    color: #666;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.notes-content {
+    font-size: 9pt;
+    color: #333;
+}
+
+/* Footer */
+.invoice-footer {
+    margin-top: 20px;
+    padding-top: 12px;
+    border-top: 1px solid #ddd;
+    text-align: center;
+    font-size: 8pt;
+    color: #666;
+}
+
+/* Tuition invoice specific */
+.tuition-amount {
+    text-align: center;
+    margin: 30px 0;
+    padding: 30px;
+    background-color: #f0f7ff;
+    border-radius: 8px;
+}
+
+.tuition-amount .amount {
+    font-size: 36pt;
+    font-weight: bold;
+    color: #2563eb;
+}
+
+.tuition-amount .due-date {
+    font-size: 14pt;
+    color: #666;
+    margin-top: 10px;
+}
+
+.payment-link {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.payment-link a {
+    display: inline-block;
+    padding: 12px 24px;
+    background-color: #2563eb;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+/* Hours breakdown table specific */
+.hours-table th:first-child,
+.hours-table td:first-child {
+    width: 120px;
+}
+
+.hours-table th:nth-child(2),
+.hours-table td:nth-child(2) {
+    width: 100px;
+    text-align: center;
+}
+
+.hours-table th:nth-child(3),
+.hours-table td:nth-child(3) {
+    width: 100px;
+    text-align: right;
+}
+
+.hours-table th:last-child,
+.hours-table td:last-child {
+    text-align: right;
+}

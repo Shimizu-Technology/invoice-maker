@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{ invoice.invoice_number }}</title>
+    <style>
+        {% include 'base.css' %}
+    </style>
+</head>
+<body>
+    <div class="invoice-header">
+        <div class="company-info">
+            <div class="company-name">{{ user.name | default('Your Company Name') }}</div>
+            <div class="company-details">
+                {% if user.email %}{{ user.email }}<br>{% endif %}
+                {% if user.address %}{{ user.address }}{% endif %}
+            </div>
+        </div>
+        <div class="invoice-title">
+            <h1>INVOICE</h1>
+            <div class="invoice-number">{{ invoice.invoice_number }}</div>
+        </div>
+    </div>
+
+    <div class="bill-to">
+        <div class="bill-to-label">Bill To</div>
+        <div class="client-name">{{ client.name }}</div>
+        <div class="client-details">
+            {% if client.email %}{{ client.email }}<br>{% endif %}
+            {% if client.address %}{{ client.address }}{% endif %}
+        </div>
+    </div>
+
+    <div class="tuition-amount">
+        <div class="amount">${{ "%.2f"|format(invoice.total_amount) }}</div>
+        {% if due_date %}
+        <div class="due-date">Due: {{ due_date.strftime('%B %d, %Y') }}</div>
+        {% else %}
+        <div class="due-date">Due: {{ invoice.date.strftime('%B %d, %Y') }}</div>
+        {% endif %}
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th class="text-right">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in line_items %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td class="text-right">${{ "%.2f"|format(item.amount) }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td>Tuition Payment</td>
+                <td class="text-right">${{ "%.2f"|format(invoice.total_amount) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="summary">
+        <div class="summary-row total">
+            <span class="summary-label">Total Due</span>
+            <span class="summary-value">${{ "%.2f"|format(invoice.total_amount) }}</span>
+        </div>
+    </div>
+
+    {% if payment_link %}
+    <div class="payment-link">
+        <a href="{{ payment_link }}">Pay Online</a>
+    </div>
+    {% endif %}
+
+    {% if invoice.notes %}
+    <div class="notes">
+        <div class="notes-label">Notes</div>
+        <div class="notes-content">{{ invoice.notes }}</div>
+    </div>
+    {% endif %}
+
+    <div class="invoice-footer">
+        Thank you for choosing {{ client.name }}!<br>
+        Questions? Contact us at {{ user.email | default('support@example.com') }}
+    </div>
+</body>
+</html>

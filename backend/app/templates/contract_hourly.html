@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{ invoice.invoice_number }}</title>
+    <style>
+        {% include 'base.css' %}
+    </style>
+</head>
+<body>
+    <div class="invoice-header">
+        <div class="company-info">
+            <div class="company-name">{{ user.name | default('Your Company Name') }}</div>
+            <div class="company-details">
+                {% if user.email %}{{ user.email }}<br>{% endif %}
+                {% if user.address %}{{ user.address }}{% endif %}
+            </div>
+        </div>
+        <div class="invoice-title">
+            <h1>INVOICE</h1>
+            <div class="invoice-number">{{ invoice.invoice_number }}</div>
+        </div>
+    </div>
+
+    <div class="bill-to">
+        <div class="bill-to-label">Bill To</div>
+        <div class="client-name">{{ client.name }}</div>
+        <div class="client-details">
+            {% if client.email %}{{ client.email }}<br>{% endif %}
+            {% if client.address %}{{ client.address }}<br>{% endif %}
+            {% if client.company_context %}{{ client.company_context }}{% endif %}
+        </div>
+    </div>
+
+    <div class="invoice-meta">
+        <div class="meta-item">
+            <div class="meta-label">Invoice Date</div>
+            <div class="meta-value">{{ invoice.date.strftime('%B %d, %Y') }}</div>
+        </div>
+        {% if invoice.service_period_start and invoice.service_period_end %}
+        <div class="meta-item">
+            <div class="meta-label">Service Period</div>
+            <div class="meta-value">
+                {{ invoice.service_period_start.strftime('%b %d') }} - {{ invoice.service_period_end.strftime('%b %d, %Y') }}
+            </div>
+        </div>
+        {% endif %}
+        <div class="meta-item">
+            <div class="meta-label">Total Due</div>
+            <div class="meta-value">${{ "%.2f"|format(invoice.total_amount) }}</div>
+        </div>
+    </div>
+
+    <!-- Summary Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th class="text-center">Total Hours</th>
+                <th class="text-right">Rate</th>
+                <th class="text-right">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    Contract Services
+                    {% if invoice.service_period_start and invoice.service_period_end %}
+                    <br><small style="color: #666;">
+                        {{ invoice.service_period_start.strftime('%B %d') }} - {{ invoice.service_period_end.strftime('%B %d, %Y') }}
+                    </small>
+                    {% endif %}
+                </td>
+                <td class="text-center">{{ "%.2f"|format(total_hours) }}</td>
+                <td class="text-right">${{ "%.2f"|format(hourly_rate) }}/hr</td>
+                <td class="text-right">${{ "%.2f"|format(invoice.total_amount) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Hours Breakdown -->
+    {% if hours_entries %}
+    <h3 style="margin-bottom: 8px; color: #333; font-size: 11pt;">Hours Breakdown</h3>
+    <table class="hours-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th class="text-center">Hours</th>
+                <th class="text-right">Rate</th>
+                <th class="text-right">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in hours_entries %}
+            <tr>
+                <td>{{ entry.date.strftime('%a, %b %d') }}</td>
+                <td class="text-center">{{ "%.2f"|format(entry.hours) }}</td>
+                <td class="text-right">${{ "%.2f"|format(entry.rate) }}</td>
+                <td class="text-right">${{ "%.2f"|format(entry.hours * entry.rate) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- Summary -->
+    <div class="summary">
+        <div class="summary-row">
+            <span class="summary-label">Subtotal</span>
+            <span class="summary-value">${{ "%.2f"|format(invoice.total_amount) }}</span>
+        </div>
+        <div class="summary-row total">
+            <span class="summary-label">Total Due</span>
+            <span class="summary-value">${{ "%.2f"|format(invoice.total_amount) }}</span>
+        </div>
+    </div>
+
+    {% if invoice.notes %}
+    <div class="notes">
+        <div class="notes-label">Notes</div>
+        <div class="notes-content">{{ invoice.notes }}</div>
+    </div>
+    {% endif %}
+
+    {% if client.payment_terms %}
+    <div class="notes">
+        <div class="notes-label">Payment Terms</div>
+        <div class="notes-content">{{ client.payment_terms }}</div>
+    </div>
+    {% endif %}
+
+    <div class="invoice-footer">
+        Thank you for your business!
+    </div>
+</body>
+</html>
