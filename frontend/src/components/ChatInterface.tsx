@@ -185,9 +185,9 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       
       const convertedMessages: ChatMessage[] = session.messages.map(msg => {
         const hasPreview = msg.invoice_preview !== null && msg.invoice_preview !== undefined;
-        if (hasPreview) {
+        if (hasPreview && msg.invoice_preview) {
           versionCount++;
-          const versionedPreview = { ...msg.invoice_preview, version: versionCount };
+          const versionedPreview = { ...msg.invoice_preview, version: versionCount } as InvoicePreview;
           // Add to history for dropdown selection
           history.push({ version: versionCount, messageId: msg.id, preview: versionedPreview });
         }
@@ -196,8 +196,8 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
           role: msg.role as 'user' | 'assistant',
           content: msg.content,
           timestamp: new Date(msg.timestamp || Date.now()),
-          invoicePreview: hasPreview 
-            ? { ...msg.invoice_preview, version: msg.invoice_preview.version || versionCount }
+          invoicePreview: hasPreview && msg.invoice_preview
+            ? { ...msg.invoice_preview, version: msg.invoice_preview.version || versionCount } as InvoicePreview
             : undefined,
           imageUrl: msg.image_url || undefined,
           imageUrls: msg.image_urls || undefined,

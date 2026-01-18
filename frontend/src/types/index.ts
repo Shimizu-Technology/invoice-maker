@@ -137,10 +137,11 @@ export interface ChatSessionInfo {
 
 // API response message type (uses snake_case from backend)
 export interface ApiChatMessage {
+  id?: string;  // Message ID from database
   role: 'user' | 'assistant';
   content: string;
   timestamp?: string;
-  invoice_preview?: InvoicePreview | null;
+  invoice_preview?: Partial<InvoicePreview> | null;  // Partial since API may not have all fields
   image_url?: string | null;  // Single image (legacy/first image)
   image_urls?: string[] | null;  // Multiple images
 }
