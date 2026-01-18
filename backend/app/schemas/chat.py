@@ -145,6 +145,15 @@ class CreateSessionRequest(BaseModel):
     )
 
 
+class SaveEventMessage(BaseModel):
+    """Schema for saving an event message to chat history."""
+    content: str = Field(..., min_length=1, max_length=1000)
+    event_type: Optional[str] = Field(
+        None,
+        description="Type of event: 'invoice_sent', 'status_changed', etc."
+    )
+
+
 # Quick Invoice schemas
 class HoursEntry(BaseModel):
     """Schema for a single hours entry."""

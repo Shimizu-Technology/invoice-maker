@@ -45,6 +45,9 @@ class ChatSession(Base):
         "ChatMessage", back_populates="session", cascade="all, delete-orphan",
         order_by="ChatMessage.created_at"
     )
+    invoices: Mapped[list["Invoice"]] = relationship(
+        "Invoice", back_populates="session"
+    )
 
     def __repr__(self) -> str:
         return f"<ChatSession(id={self.id}, client_id={self.client_id}, title={self.title})>"

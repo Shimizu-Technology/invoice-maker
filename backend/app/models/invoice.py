@@ -28,6 +28,9 @@ class Invoice(Base):
     client_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("clients.id"), nullable=False
     )
+    session_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("chat_sessions.id"), nullable=True
+    )
     invoice_number: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     date: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
     service_period_start: Mapped[date | None] = mapped_column(Date, nullable=True)
@@ -50,6 +53,7 @@ class Invoice(Base):
 
     # Relationships
     client: Mapped["Client"] = relationship("Client", back_populates="invoices")
+    session: Mapped["ChatSession"] = relationship("ChatSession", back_populates="invoices")
     hours_entries: Mapped[list["HoursEntry"]] = relationship(
         "HoursEntry", back_populates="invoice", cascade="all, delete-orphan"
     )

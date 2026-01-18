@@ -61,6 +61,7 @@ class AIService:
         conversation_history: Optional[list[dict]] = None,
         image_urls: Optional[list[str]] = None,
         current_preview: Optional[dict] = None,
+        session_invoices: Optional[list[dict]] = None,
     ) -> dict:
         """
         Extract invoice data from natural language input.
@@ -71,11 +72,12 @@ class AIService:
             conversation_history: Optional previous messages in conversation
             image_urls: Optional URLs of attached images for context
             current_preview: Optional current invoice preview being edited
+            session_invoices: Optional list of invoices created in this session
 
         Returns:
             Extracted invoice data or clarification request
         """
-        system_prompt = self._build_extraction_prompt(client_context, current_preview)
+        system_prompt = self._build_extraction_prompt(client_context, current_preview, session_invoices)
 
         messages = []
         if conversation_history:
@@ -108,7 +110,7 @@ class AIService:
 
         return self._parse_extraction_response(response)
 
-    def _build_extraction_prompt(self, client_context: Optional[str] = None, current_preview: Optional[dict] = None) -> str:
+    def _build_extraction_prompt(self, client_context: Optional[str] = None, current_preview: Optional[dict] = None, session_invoices: Optional[list[dict]] = None) -> str:
         """Build the system prompt for invoice extraction."""
         today = date.today()
         today_str = today.strftime("%Y-%m-%d")
@@ -221,6 +223,20 @@ CURRENT INVOICE PREVIEW (user is editing this):
 
 The user wants to modify this existing invoice. Apply their requested changes and return the updated invoice_data.
 Keep all fields that they don't explicitly ask to change."""
+
+        # Include session invoices so AI knows what was already created
+        if session_invoices and len(session_invoices) > 0:
+            import json
+            invoices_summary = "\n".join([
+                f"- {inv['invoice_number']}: ${inv['total_amount']:.2f}, status: {inv['status']}, created: {inv['created_at']}"
+                for inv in session_invoices
+            ])
+            base_prompt += f"""
+
+INVOICES CREATED IN THIS SESSION:
+{invoices_summary}
+
+The user may refer to these invoices. If they ask about an invoice status or want to make changes, consider this context."""
 
         return base_prompt
 

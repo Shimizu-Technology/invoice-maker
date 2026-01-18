@@ -9,7 +9,7 @@ from decimal import Decimal
 from ..database import get_db
 from ..models.client import Client, TemplateType
 from ..models.chat_session import ChatSession, ChatMessage, MessageRole
-from ..models.invoice import InvoiceStatus
+from ..models.invoice import Invoice, InvoiceStatus
 from ..schemas.chat import (
     ChatMessageCreate,
     ChatResponse,
@@ -22,6 +22,7 @@ from ..schemas.chat import (
     CreateSessionRequest,
     ChatMessage as ChatMessageSchema,
     ChatRole,
+    SaveEventMessage,
 )
 from ..services.invoice_parser import invoice_parser
 from ..services.pdf_generator import pdf_generator
@@ -202,6 +203,42 @@ async def delete_session(session_id: str, db: Session = Depends(get_db)):
     return {"message": "Session deleted"}
 
 
+@router.post("/sessions/{session_id}/event")
+async def save_event_message(
+    session_id: str, 
+    event: SaveEventMessage, 
+    db: Session = Depends(get_db)
+):
+    """
+    Save an event message to chat history.
+    
+    Used for tracking events like:
+    - Invoice marked as sent
+    - Invoice status changed
+    - Other important actions
+    
+    These messages appear in conversation history and provide context for the AI.
+    """
+    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Save as an assistant message (system event)
+    event_msg = ChatMessage(
+        session_id=session.id,
+        role=MessageRole.ASSISTANT,
+        content=event.content,
+    )
+    db.add(event_msg)
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": "Event saved to chat history",
+        "event_type": event.event_type,
+    }
+
+
 @router.post("", response_model=ChatResponse)
 async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
     """
@@ -263,6 +300,17 @@ async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
         except json.JSONDecodeError:
             pass
 
+    # Get invoices created in this session for AI context
+    session_invoices = []
+    session_invoice_records = db.query(Invoice).filter(Invoice.session_id == session.id).all()
+    for inv in session_invoice_records:
+        session_invoices.append({
+            "invoice_number": inv.invoice_number,
+            "total_amount": float(inv.total_amount),
+            "status": inv.status.value,
+            "created_at": inv.created_at.strftime("%Y-%m-%d %H:%M"),
+        })
+
     # Process the message (with optional images)
     # Use image_urls if provided, otherwise fall back to single image_url
     image_urls = message.image_urls or ([message.image_url] if message.image_url else None)
@@ -272,6 +320,7 @@ async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
         conversation_history=history[:-1],  # Exclude current message
         image_urls=image_urls,  # Pass image URLs for vision processing
         current_preview=current_preview,  # Pass current preview for modifications
+        session_invoices=session_invoices,  # Pass invoices created in this session
     )
 
     # Handle different response types
@@ -387,8 +436,8 @@ async def _confirm_invoice(session: ChatSession, db: Session) -> ChatResponse:
     db.add(user_confirm_msg)
 
     try:
-        # Create the invoice
-        invoice = invoice_parser.create_invoice_from_preview(preview, db)
+        # Create the invoice (linked to this chat session)
+        invoice = invoice_parser.create_invoice_from_preview(preview, db, session_id=session.id)
 
         # Generate PDF
         client = db.query(Client).filter(Client.id == invoice.client_id).first()

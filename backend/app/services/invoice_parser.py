@@ -22,6 +22,7 @@ class InvoiceParser:
         conversation_history: Optional[list[dict]] = None,
         image_urls: Optional[list[str]] = None,
         current_preview: Optional[dict] = None,
+        session_invoices: Optional[list[dict]] = None,
     ) -> dict:
         """
         Process a chat message and extract/create invoice.
@@ -32,6 +33,7 @@ class InvoiceParser:
             conversation_history: Previous messages in conversation
             image_urls: Optional URLs of attached images for context
             current_preview: Optional current invoice preview to modify
+            session_invoices: Optional list of invoices created in this session
 
         Returns:
             Response dict with status and data
@@ -46,6 +48,7 @@ class InvoiceParser:
             conversation_history=conversation_history,
             image_urls=image_urls,
             current_preview=current_preview,
+            session_invoices=session_invoices,
         )
 
         if extraction.get("status") == "clarification_needed":
@@ -306,7 +309,7 @@ class InvoiceParser:
         return None
 
     def create_invoice_from_preview(
-        self, preview: dict, db: Session
+        self, preview: dict, db: Session, session_id: Optional[str] = None
     ) -> Invoice:
         """Create an actual invoice from a preview."""
         # Ensure invoice number is unique at creation time
@@ -317,6 +320,7 @@ class InvoiceParser:
         # Create invoice
         invoice = Invoice(
             client_id=preview["client_id"],
+            session_id=session_id,  # Link to chat session for context
             invoice_number=unique_number,
             date=self._parse_date(preview["date"]) or date.today(),
             service_period_start=self._parse_date(preview.get("service_period_start")),

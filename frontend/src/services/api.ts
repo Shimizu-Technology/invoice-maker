@@ -223,6 +223,19 @@ export const chatApi = {
     }
   },
 
+  // Save an event message to chat history (persists to DB)
+  saveEvent: async (sessionId: string, content: string, eventType?: string): Promise<void> => {
+    try {
+      await api.post(`/api/chat/sessions/${sessionId}/event`, {
+        content,
+        event_type: eventType,
+      });
+    } catch (error) {
+      console.error('Failed to save event:', error);
+      // Don't throw - event saving is not critical
+    }
+  },
+
   createClient: async (
     sessionId: string,
     name: string,

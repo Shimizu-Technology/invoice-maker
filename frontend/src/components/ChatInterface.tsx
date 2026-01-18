@@ -521,15 +521,20 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
   };
 
   const handleMarkAsSent = async () => {
-    if (createdInvoice?.invoiceId) {
+    if (createdInvoice?.invoiceId && currentSessionId) {
       try {
+        // Update invoice status in DB
         await invoicesApi.update(createdInvoice.invoiceId, { status: 'sent' });
         setMarkedAsSent(true);
         
-        // Add a message to the chat so it's tracked in history
+        // Save event to chat history (persists to DB)
+        const eventContent = `✅ Invoice ${createdInvoice.invoiceNumber} has been marked as sent.`;
+        await chatApi.saveEvent(currentSessionId, eventContent, 'invoice_sent');
+        
+        // Add to local state immediately
         const sentMessage: ChatMessage = {
           role: 'assistant',
-          content: `✅ Invoice ${createdInvoice.invoiceNumber} has been marked as sent.`,
+          content: eventContent,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, sentMessage]);
