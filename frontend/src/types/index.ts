@@ -16,6 +16,7 @@ export interface Client {
   payment_terms: string | null;
   invoice_prefix: string;
   company_context: string | null;
+  next_invoice_number: number | null;  // Manual override for next invoice number
   created_at: string;
   updated_at: string;
 }
@@ -50,6 +51,7 @@ export interface Invoice {
   status: InvoiceStatus;
   pdf_path: string | null;
   notes: string | null;
+  archived: boolean;
   created_at: string;
   updated_at: string;
   hours_entries: HoursEntry[];
@@ -128,6 +130,7 @@ export interface ChatSessionInfo {
   title: string;
   last_message: string | null;
   message_count: number;
+  archived: boolean;
   created_at: string;
   updated_at: string;
 }

@@ -87,6 +87,7 @@ def get_conversation_history(session: ChatSession, limit: int = 20) -> list[dict
 @router.get("/sessions", response_model=list[ChatSessionInfo])
 async def list_sessions(
     client_id: Optional[str] = None,
+    include_archived: bool = False,
     db: Session = Depends(get_db)
 ):
     """List all chat sessions, optionally filtered by client."""
@@ -94,6 +95,10 @@ async def list_sessions(
     
     if client_id:
         query = query.filter(ChatSession.client_id == client_id)
+    
+    # Filter out archived sessions by default
+    if not include_archived:
+        query = query.filter(ChatSession.archived == False)
     
     sessions = query.limit(50).all()
     
@@ -111,6 +116,7 @@ async def list_sessions(
             title=session.title,
             last_message=last_message,
             message_count=len(session.messages),
+            archived=session.archived,
             created_at=session.created_at,
             updated_at=session.updated_at,
         ))
@@ -146,6 +152,7 @@ async def create_session(
         title=session.title,
         last_message=None,
         message_count=0,
+        archived=session.archived,
         created_at=session.created_at,
         updated_at=session.updated_at,
     )
@@ -236,6 +243,28 @@ async def delete_session(session_id: str, db: Session = Depends(get_db)):
         db.delete(session)
         db.commit()
     return {"message": "Session deleted"}
+
+
+@router.post("/sessions/{session_id}/archive")
+async def archive_session(session_id: str, db: Session = Depends(get_db)):
+    """Archive a chat session (hides from default list)."""
+    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    session.archived = True
+    db.commit()
+    return {"message": "Session archived", "archived": True}
+
+
+@router.post("/sessions/{session_id}/restore")
+async def restore_session(session_id: str, db: Session = Depends(get_db)):
+    """Restore an archived chat session."""
+    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    session.archived = False
+    db.commit()
+    return {"message": "Session restored", "archived": False}
 
 
 @router.post("/sessions/{session_id}/event")

@@ -175,9 +175,16 @@ class InvoiceParser:
             - SPECTRIO-2026-001
             - GUAM-2026-001
             - INV-2026-015
+        
+        If client.next_invoice_number is set, uses that instead of auto-calculating.
         """
         prefix = client.invoice_prefix or "INV"
         year = invoice_date.year
+        
+        # If client has a manual override for next invoice number, use it
+        if client.next_invoice_number is not None:
+            next_seq = client.next_invoice_number
+            return f"{prefix}-{year}-{next_seq:03d}"
         
         # Find the highest sequence number for this client in this year
         # Look for pattern like PREFIX-YEAR-XXX
@@ -352,6 +359,11 @@ class InvoiceParser:
                 amount=Decimal(str(item["amount"])),
             )
             db.add(db_item)
+
+        # If client had a manual next_invoice_number, increment it for next time
+        client = db.query(Client).filter(Client.id == preview["client_id"]).first()
+        if client and client.next_invoice_number is not None:
+            client.next_invoice_number += 1
 
         db.commit()
         db.refresh(invoice)

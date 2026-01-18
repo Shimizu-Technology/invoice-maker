@@ -91,10 +91,27 @@ export const invoicesApi = {
     status?: string;
     start_date?: string;
     end_date?: string;
+    include_archived?: boolean;
   }): Promise<Invoice[]> => {
     try {
       const response = await api.get('/api/invoices', { params });
       return response.data;
+    } catch (error) {
+      throw handleError(error as AxiosError);
+    }
+  },
+
+  archive: async (id: string): Promise<void> => {
+    try {
+      await api.post(`/api/invoices/${id}/archive`);
+    } catch (error) {
+      throw handleError(error as AxiosError);
+    }
+  },
+
+  restore: async (id: string): Promise<void> => {
+    try {
+      await api.post(`/api/invoices/${id}/restore`);
     } catch (error) {
       throw handleError(error as AxiosError);
     }
@@ -143,11 +160,29 @@ export const invoicesApi = {
 // Chat API
 export const chatApi = {
   // Session management
-  listSessions: async (clientId?: string): Promise<ChatSessionInfo[]> => {
+  listSessions: async (clientId?: string, includeArchived?: boolean): Promise<ChatSessionInfo[]> => {
     try {
-      const params = clientId ? { client_id: clientId } : {};
+      const params: Record<string, string | boolean> = {};
+      if (clientId) params.client_id = clientId;
+      if (includeArchived) params.include_archived = true;
       const response = await api.get('/api/chat/sessions', { params });
       return response.data;
+    } catch (error) {
+      throw handleError(error as AxiosError);
+    }
+  },
+
+  archiveSession: async (sessionId: string): Promise<void> => {
+    try {
+      await api.post(`/api/chat/sessions/${sessionId}/archive`);
+    } catch (error) {
+      throw handleError(error as AxiosError);
+    }
+  },
+
+  restoreSession: async (sessionId: string): Promise<void> => {
+    try {
+      await api.post(`/api/chat/sessions/${sessionId}/restore`);
     } catch (error) {
       throw handleError(error as AxiosError);
     }

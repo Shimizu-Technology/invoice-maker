@@ -41,6 +41,7 @@ async def list_invoices(
     status: Optional[InvoiceStatus] = Query(None, description="Filter by status"),
     start_date: Optional[date] = Query(None, description="Filter by start date"),
     end_date: Optional[date] = Query(None, description="Filter by end date"),
+    include_archived: bool = Query(False, description="Include archived invoices"),
     db: Session = Depends(get_db),
 ):
     """List all invoices with optional filters."""
@@ -54,6 +55,10 @@ async def list_invoices(
         query = query.filter(Invoice.date >= start_date)
     if end_date:
         query = query.filter(Invoice.date <= end_date)
+    
+    # Filter out archived invoices by default
+    if not include_archived:
+        query = query.filter(Invoice.archived == False)
 
     invoices = query.order_by(Invoice.date.desc()).all()
     return invoices
@@ -247,3 +252,31 @@ async def delete_invoice(invoice_id: str, db: Session = Depends(get_db)):
     db.delete(invoice)
     db.commit()
     return None
+
+
+@router.post("/{invoice_id}/archive")
+async def archive_invoice(invoice_id: str, db: Session = Depends(get_db)):
+    """Archive an invoice (hides from default list)."""
+    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    if not invoice:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Invoice with ID '{invoice_id}' not found",
+        )
+    invoice.archived = True
+    db.commit()
+    return {"message": "Invoice archived", "archived": True}
+
+
+@router.post("/{invoice_id}/restore")
+async def restore_invoice(invoice_id: str, db: Session = Depends(get_db)):
+    """Restore an archived invoice."""
+    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    if not invoice:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Invoice with ID '{invoice_id}' not found",
+        )
+    invoice.archived = False
+    db.commit()
+    return {"message": "Invoice restored", "archived": False}

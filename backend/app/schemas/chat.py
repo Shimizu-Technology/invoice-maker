@@ -112,6 +112,7 @@ class ChatSessionInfo(BaseModel):
     title: str
     last_message: Optional[str] = None
     message_count: int = 0
+    archived: bool = False
     created_at: datetime
     updated_at: datetime
 

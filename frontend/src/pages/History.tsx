@@ -24,6 +24,7 @@ export default function History() {
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
   const [startDate, setStartDate] = useState(searchParams.get('start') || '');
   const [endDate, setEndDate] = useState(searchParams.get('end') || '');
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -40,12 +41,12 @@ export default function History() {
 
   useEffect(() => {
     loadInvoices();
-  }, [clientFilter, statusFilter, startDate, endDate]);
+  }, [clientFilter, statusFilter, startDate, endDate, showArchived]);
 
   const loadData = async () => {
     try {
       const [invoicesData, clientsData] = await Promise.all([
-        invoicesApi.list(),
+        invoicesApi.list({ include_archived: showArchived }),
         clientsApi.list(),
       ]);
       setInvoices(invoicesData);
@@ -59,11 +60,12 @@ export default function History() {
 
   const loadInvoices = async () => {
     try {
-      const params: Record<string, string> = {};
+      const params: Record<string, string | boolean> = {};
       if (clientFilter) params.client_id = clientFilter;
       if (statusFilter) params.status = statusFilter;
       if (startDate) params.start_date = startDate;
       if (endDate) params.end_date = endDate;
+      if (showArchived) params.include_archived = true;
 
       const data = await invoicesApi.list(params);
       setInvoices(data);
@@ -80,6 +82,32 @@ export default function History() {
       setInvoices((prev) => prev.filter((inv) => inv.id !== id));
     } catch (err) {
       setError('Failed to delete invoice');
+    }
+  };
+
+  const handleArchive = async (id: string) => {
+    try {
+      await invoicesApi.archive(id);
+      setInvoices((prev) => prev.filter((inv) => inv.id !== id));
+    } catch (err) {
+      setError('Failed to archive invoice');
+    }
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      await invoicesApi.restore(id);
+      // Remove from list if not showing archived
+      if (!showArchived) {
+        setInvoices((prev) => prev.filter((inv) => inv.id !== id));
+      } else {
+        // Update archived status in list
+        setInvoices((prev) => prev.map((inv) => 
+          inv.id === id ? { ...inv, archived: false } : inv
+        ));
+      }
+    } catch (err) {
+      setError('Failed to restore invoice');
     }
   };
 
@@ -349,14 +377,28 @@ export default function History() {
                 />
               </div>
             </div>
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                className="mt-4 text-sm text-primary-600 hover:text-primary-800 min-h-[44px] px-2"
-              >
-                Clear all filters
-              </button>
-            )}
+            
+            {/* Show Archived toggle */}
+            <div className="mt-4 flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(e) => setShowArchived(e.target.checked)}
+                  className="w-4 h-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+                />
+                <span className="text-sm text-gray-600">Show archived invoices</span>
+              </label>
+              
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  className="text-sm text-primary-600 hover:text-primary-800 min-h-[44px] px-2"
+                >
+                  Clear all filters
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -475,6 +517,21 @@ export default function History() {
                       >
                         Duplicate
                       </button>
+                      {invoice.archived ? (
+                        <button
+                          onClick={() => handleRestore(invoice.id)}
+                          className="text-blue-600 hover:text-blue-800 mr-3"
+                        >
+                          Restore
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleArchive(invoice.id)}
+                          className="text-stone-500 hover:text-stone-700 mr-3"
+                        >
+                          Archive
+                        </button>
+                      )}
                       <button
                         onClick={() => handleDelete(invoice.id)}
                         className="text-red-600 hover:text-red-800"
@@ -585,6 +642,27 @@ export default function History() {
                     </svg>
                     <span className="text-xs">Copy</span>
                   </button>
+                  {invoice.archived ? (
+                    <button
+                      onClick={() => handleRestore(invoice.id)}
+                      className="flex flex-col items-center py-2 text-blue-600 hover:bg-blue-50 rounded min-h-[44px]"
+                    >
+                      <svg className="h-5 w-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span className="text-xs">Restore</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleArchive(invoice.id)}
+                      className="flex flex-col items-center py-2 text-stone-500 hover:bg-stone-50 rounded min-h-[44px]"
+                    >
+                      <svg className="h-5 w-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                      </svg>
+                      <span className="text-xs">Archive</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => handleDelete(invoice.id)}
                     className="flex flex-col items-center py-2 text-red-600 hover:bg-red-50 rounded min-h-[44px]"

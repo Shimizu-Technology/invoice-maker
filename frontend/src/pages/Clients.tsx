@@ -16,6 +16,7 @@ interface ClientFormData {
   default_rate: string;
   template_type: TemplateType;
   invoice_prefix: string;
+  next_invoice_number: string;
   company_context: string;
   payment_terms: string;
 }
@@ -27,6 +28,7 @@ const emptyFormData: ClientFormData = {
   default_rate: '0',
   template_type: 'hourly',
   invoice_prefix: 'INV',
+  next_invoice_number: '',
   company_context: '',
   payment_terms: '',
 };
@@ -77,6 +79,7 @@ export default function Clients() {
       default_rate: client.default_rate,
       template_type: client.template_type,
       invoice_prefix: client.invoice_prefix,
+      next_invoice_number: client.next_invoice_number?.toString() || '',
       company_context: client.company_context || '',
       payment_terms: client.payment_terms || '',
     });
@@ -95,6 +98,7 @@ export default function Clients() {
         default_rate: formData.default_rate,
         template_type: formData.template_type,
         invoice_prefix: formData.invoice_prefix,
+        next_invoice_number: formData.next_invoice_number ? parseInt(formData.next_invoice_number) : null,
         company_context: formData.company_context || null,
         payment_terms: formData.payment_terms || null,
       };
@@ -395,6 +399,20 @@ export default function Clients() {
                   placeholder="INV"
                 />
                 <p className="text-xs text-stone-400 mt-1">Invoice numbers: {formData.invoice_prefix || 'INV'}-2026-001, {formData.invoice_prefix || 'INV'}-2026-002, etc.</p>
+              </div>
+
+              {/* Next Invoice Number Override */}
+              <div>
+                <label className="block text-sm font-medium text-stone-700 mb-1">Next Invoice Number</label>
+                <input
+                  type="number"
+                  value={formData.next_invoice_number}
+                  onChange={(e) => setFormData({ ...formData, next_invoice_number: e.target.value })}
+                  min={1}
+                  className="w-full px-3 py-2.5 border border-stone-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 min-h-[44px]"
+                  placeholder="Auto (based on existing invoices)"
+                />
+                <p className="text-xs text-stone-400 mt-1">Leave empty for auto-numbering, or set to override the next invoice's sequence number</p>
               </div>
 
               {/* Company Context / Notes */}

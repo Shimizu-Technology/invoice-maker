@@ -43,6 +43,9 @@ class Invoice(Base):
     )
     pdf_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    
+    # Archive flag - archived invoices are hidden from default list
+    archived: Mapped[bool] = mapped_column(default=False)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc), nullable=False

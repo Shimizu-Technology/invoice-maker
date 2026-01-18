@@ -112,6 +112,7 @@ class InvoiceSummary(BaseModel):
     date: date_type
     total_amount: Decimal
     status: InvoiceStatus
+    archived: bool = False
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

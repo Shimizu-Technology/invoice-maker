@@ -31,6 +31,9 @@ class ChatSession(Base):
     # Store pending invoice preview as JSON string
     invoice_preview_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     
+    # Archive flag - archived sessions are hidden from default list
+    archived: Mapped[bool] = mapped_column(default=False)
+    
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
     )

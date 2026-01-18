@@ -37,6 +37,9 @@ class Client(Base):
     payment_terms: Mapped[str | None] = mapped_column(Text, nullable=True)
     invoice_prefix: Mapped[str] = mapped_column(String(20), default="INV")
     company_context: Mapped[str | None] = mapped_column(Text, nullable=True)
+    
+    # Manual control over next invoice number (if None, auto-calculated)
+    next_invoice_number: Mapped[int | None] = mapped_column(nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc), nullable=False

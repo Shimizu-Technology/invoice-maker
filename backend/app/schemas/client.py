@@ -25,6 +25,7 @@ class ClientBase(BaseModel):
     payment_terms: Optional[str] = None
     invoice_prefix: str = Field(default="INV", max_length=20)
     company_context: Optional[str] = None
+    next_invoice_number: Optional[int] = Field(None, ge=1, description="Override next invoice sequence number")
 
 
 class ClientCreate(ClientBase):
@@ -43,6 +44,7 @@ class ClientUpdate(BaseModel):
     payment_terms: Optional[str] = None
     invoice_prefix: Optional[str] = Field(None, max_length=20)
     company_context: Optional[str] = None
+    next_invoice_number: Optional[int] = Field(None, ge=1, description="Override next invoice sequence number")
 
 
 class ClientResponse(ClientBase):

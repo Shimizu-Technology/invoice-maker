@@ -66,6 +66,9 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
   // Copy success feedback - stores message index that was just copied
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
   
+  // Archive toggle for sessions
+  const [showArchivedSessions, setShowArchivedSessions] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -94,12 +97,45 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
   const loadSessions = async () => {
     setIsLoadingSessions(true);
     try {
-      const data = await chatApi.listSessions();
+      const data = await chatApi.listSessions(undefined, showArchivedSessions);
       setSessions(data);
     } catch (error) {
       console.error('Failed to load sessions:', error);
     } finally {
       setIsLoadingSessions(false);
+    }
+  };
+  
+  // Reload sessions when archive toggle changes
+  useEffect(() => {
+    loadSessions();
+  }, [showArchivedSessions]);
+
+  const handleArchiveSession = async (sessionId: string) => {
+    try {
+      await chatApi.archiveSession(sessionId);
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      // If we archived the current session, create a new one
+      if (currentSessionId === sessionId) {
+        createNewSession();
+      }
+    } catch (error) {
+      console.error('Failed to archive session:', error);
+    }
+  };
+
+  const handleRestoreSession = async (sessionId: string) => {
+    try {
+      await chatApi.restoreSession(sessionId);
+      if (!showArchivedSessions) {
+        setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+      } else {
+        setSessions((prev) => prev.map((s) => 
+          s.id === sessionId ? { ...s, archived: false } : s
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to restore session:', error);
     }
   };
 
@@ -750,6 +786,19 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
           </div>
         )}
 
+        {/* Archive toggle */}
+        <div className="px-3 py-2 border-b border-stone-100">
+          <label className="flex items-center gap-2 cursor-pointer text-xs text-stone-500">
+            <input
+              type="checkbox"
+              checked={showArchivedSessions}
+              onChange={(e) => setShowArchivedSessions(e.target.checked)}
+              className="w-3.5 h-3.5 text-teal-600 border-gray-300 rounded focus:ring-teal-500"
+            />
+            Show archived chats
+          </label>
+        </div>
+
         {/* Session list */}
         <div className="flex-1 overflow-y-auto">
           {isLoadingSessions ? (
@@ -774,8 +823,11 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                   onClick={() => { loadSession(session.id); setShowSidebar(false); }}
                 >
                   <div className="flex-1 min-w-0">
-                    <div className={`text-sm font-medium truncate ${session.id === currentSessionId ? 'text-teal-700' : 'text-stone-700'}`}>
+                    <div className={`text-sm font-medium truncate flex items-center gap-1.5 ${session.id === currentSessionId ? 'text-teal-700' : 'text-stone-700'}`}>
                       {session.client_name || session.title}
+                      {session.archived && (
+                        <span className="text-[10px] px-1.5 py-0.5 bg-stone-200 text-stone-500 rounded">archived</span>
+                      )}
                     </div>
                     <div className="text-xs text-stone-500 truncate mt-0.5">
                       {session.last_message || 'No messages'}
@@ -784,19 +836,49 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                       {formatDate(session.updated_at)}
                     </div>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (confirm('Delete this chat?')) {
-                        deleteSession(session.id);
-                      }
-                    }}
-                    className="opacity-0 group-hover:opacity-100 p-2 text-stone-400 hover:text-red-500 transition-all rounded-lg hover:bg-red-50 min-w-[36px] min-h-[36px] flex items-center justify-center"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
+                  <div className="flex items-center gap-1">
+                    {session.archived ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRestoreSession(session.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-2 text-blue-500 hover:text-blue-600 transition-all rounded-lg hover:bg-blue-50 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                        title="Restore"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleArchiveSession(session.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-2 text-stone-400 hover:text-stone-600 transition-all rounded-lg hover:bg-stone-100 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                        title="Archive"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm('Delete this chat?')) {
+                          deleteSession(session.id);
+                        }
+                      }}
+                      className="opacity-0 group-hover:opacity-100 p-2 text-stone-400 hover:text-red-500 transition-all rounded-lg hover:bg-red-50 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                      title="Delete"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
