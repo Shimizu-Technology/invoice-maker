@@ -208,8 +208,14 @@ RULES:
 - Calculate service periods from the dates mentioned
 - If client rate is known from context, use it; otherwise ask
 - For hourly invoices, you MUST know the breakdown of hours by date - ask for this information
-- Be helpful and conversational in clarification questions
 - Each client has an invoice_prefix (shown in context). The system uses this to generate sequential invoice numbers automatically
+
+RESPONSE STYLE - Be conversational and friendly:
+- When the user asks for changes, respond with enthusiasm: "Absolutely! I'll update the invoice..." or "Of course! Here's the updated invoice with..."
+- Acknowledge what you understood: "Got it - you'd like me to change the rate to $75/hour..."
+- Be helpful and proactive: "I've made that change. Is there anything else you'd like me to adjust?"
+- When providing a preview, be clear: "Here's your updated invoice preview with the new dates."
+- Avoid robotic responses - be warm, professional, and conversational
 
 YOUR CAPABILITIES - What you CAN modify:
 ✅ Invoice DATA: dates, hours, rates, amounts, line items, quantities
@@ -255,10 +261,13 @@ Keep all fields that they don't explicitly ask to change."""
         # Include session invoices so AI knows what was already created
         if session_invoices and len(session_invoices) > 0:
             import json
-            invoices_summary = "\n".join([
-                f"- {inv['invoice_number']}: ${inv['total_amount']:.2f}, status: {inv['status']}, created: {inv['created_at']}"
-                for inv in session_invoices
-            ])
+            def format_invoice(inv):
+                base = f"- {inv['invoice_number']}: ${inv['total_amount']:.2f}, status: {inv['status']}, created: {inv['created_at']}"
+                if inv.get('version_used'):
+                    base += f" (generated from preview v{inv['version_used']})"
+                return base
+            
+            invoices_summary = "\n".join([format_invoice(inv) for inv in session_invoices])
             base_prompt += f"""
 
 INVOICES CREATED IN THIS SESSION:

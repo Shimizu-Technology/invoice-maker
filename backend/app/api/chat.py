@@ -2,6 +2,7 @@
 
 import json
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional
 from decimal import Decimal
@@ -342,6 +343,35 @@ async def set_preview_version(
     }
 
 
+class SetPreviewRequest(BaseModel):
+    preview: dict
+
+
+@router.post("/sessions/{session_id}/set-preview-data")
+async def set_preview_data(
+    session_id: str,
+    request: SetPreviewRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Set the current invoice preview for the session directly from preview data.
+    
+    Used when user selects a version from the dropdown.
+    """
+    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Set this preview as the current session preview
+    session.invoice_preview_json = json.dumps(request.preview)
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": "Preview updated",
+    }
+
+
 @router.post("", response_model=ChatResponse)
 async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
     """
@@ -407,12 +437,16 @@ async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
     session_invoices = []
     session_invoice_records = db.query(Invoice).filter(Invoice.session_id == session.id).all()
     for inv in session_invoice_records:
-        session_invoices.append({
+        invoice_info = {
             "invoice_number": inv.invoice_number,
             "total_amount": float(inv.total_amount),
             "status": inv.status.value,
             "created_at": inv.created_at.strftime("%Y-%m-%d %H:%M"),
-        })
+        }
+        # Try to get the version from the current preview if this is the most recent invoice
+        if current_preview and current_preview.get("invoice_id") == inv.id:
+            invoice_info["version_used"] = current_preview.get("version", "unknown")
+        session_invoices.append(invoice_info)
 
     # Process the message (with optional images)
     # Use image_urls if provided, otherwise fall back to single image_url

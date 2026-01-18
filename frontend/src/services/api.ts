@@ -272,6 +272,13 @@ export const chatApi = {
     }
   },
 
+  // Set the current preview for a session (for version dropdown selection)
+  setPreviewData: async (sessionId: string, preview: object): Promise<void> => {
+    await api.post(`/api/chat/sessions/${sessionId}/set-preview-data`, {
+      preview,
+    });
+  },
+
   // Set a specific preview version as current (for "Use this version" feature)
   setPreviewVersion: async (sessionId: string, messageId: string): Promise<{ invoice_preview: InvoicePreview }> => {
     try {

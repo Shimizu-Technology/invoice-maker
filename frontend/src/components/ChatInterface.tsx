@@ -22,6 +22,7 @@ interface CreatedInvoice {
   pdfUrl: string;
   emailSubject?: string;
   emailBody?: string;
+  version?: number;  // Track which preview version was used
 }
 
 interface ChatInterfaceProps {
@@ -69,6 +70,10 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
   // Archive toggle for sessions
   const [showArchivedSessions, setShowArchivedSessions] = useState(false);
   
+  // Track all preview versions for dropdown selection
+  const [previewHistory, setPreviewHistory] = useState<Array<{version: number; messageId?: string; preview: InvoicePreview}>>([]);
+  const [showVersionDropdown, setShowVersionDropdown] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,6 +98,21 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Close version dropdown when clicking outside
+  useEffect(() => {
+    if (showVersionDropdown) {
+      const handleClickOutside = () => setShowVersionDropdown(false);
+      // Small delay to prevent immediate close on click
+      const timer = setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+      }, 0);
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('click', handleClickOutside);
+      };
+    }
+  }, [showVersionDropdown]);
 
   const loadSessions = async () => {
     setIsLoadingSessions(true);
@@ -159,14 +179,20 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       }
       
       // Convert messages including invoice_preview and images
-      // Count previews to set version correctly
+      // Count previews to set version correctly and build preview history
       let versionCount = 0;
+      const history: Array<{version: number; messageId?: string; preview: InvoicePreview}> = [];
+      
       const convertedMessages: ChatMessage[] = session.messages.map(msg => {
         const hasPreview = msg.invoice_preview !== null && msg.invoice_preview !== undefined;
         if (hasPreview) {
           versionCount++;
+          const versionedPreview = { ...msg.invoice_preview, version: versionCount };
+          // Add to history for dropdown selection
+          history.push({ version: versionCount, messageId: msg.id, preview: versionedPreview });
         }
         return {
+          id: msg.id,
           role: msg.role as 'user' | 'assistant',
           content: msg.content,
           timestamp: new Date(msg.timestamp || Date.now()),
@@ -179,6 +205,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       });
       setMessages(convertedMessages);
       setPreviewVersion(versionCount);
+      setPreviewHistory(history);
       
       // Check if this session has a completed invoice (invoice_id in preview)
       if (session.invoice_preview?.invoice_id) {
@@ -189,6 +216,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
           pdfUrl: session.invoice_preview.pdf_url || `/api/invoices/${session.invoice_preview.invoice_id}/pdf`,
           emailSubject: session.invoice_preview.email_subject || undefined,
           emailBody: session.invoice_preview.email_body || undefined,
+          version: session.invoice_preview.version || versionCount,
         });
         setCurrentPreview(session.invoice_preview); // Keep preview for display
       } else if (session.invoice_preview) {
@@ -216,6 +244,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       setMessages([]);
       setCurrentPreview(null);
       setPreviewVersion(0); // Reset version counter for new session
+      setPreviewHistory([]); // Reset preview history for new session
       setCreatedInvoice(null);
       setDismissedInvoice(null);
       setPendingClientCreation(null);
@@ -336,6 +365,9 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
         assistantMessage.invoicePreview = versionedPreview;
         setCurrentPreview(versionedPreview);
         
+        // Add to preview history for dropdown selection
+        setPreviewHistory(prev => [...prev, { version: newVersion, preview: versionedPreview }]);
+        
         // Clear any previously created invoice - user is now working on a new/modified invoice
         // This prevents confusion with old success banner showing alongside new preview
         if (createdInvoice) {
@@ -349,10 +381,14 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
         const invoiceMatch = response.message.match(/Invoice\s+(\S+)\s+created/i);
         const invoiceNumber = invoiceMatch ? invoiceMatch[1] : 'Invoice';
         
+        // Capture version if we have a current preview
+        const usedVersion = currentPreview?.version;
+        
         setCreatedInvoice({
           invoiceId: response.invoice_id,
           invoiceNumber: invoiceNumber,
           pdfUrl: response.pdf_url,
+          version: usedVersion,
         });
         setCurrentPreview(null);
         await loadSessions(); // Refresh session list
@@ -449,6 +485,9 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
         assistantMessage.invoicePreview = versionedPreview;
         setCurrentPreview(versionedPreview);
         
+        // Add to preview history for dropdown selection
+        setPreviewHistory(prev => [...prev, { version: newVersion, preview: versionedPreview }]);
+        
         // Clear any previously created invoice
         if (createdInvoice) {
           setCreatedInvoice(null);
@@ -487,6 +526,9 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       if (response.status === 'invoice_created' && response.pdf_url && response.invoice_id) {
         const invoiceMatch = response.message.match(/Invoice\s+(\S+)\s+created/i);
         const invoiceNumber = invoiceMatch ? invoiceMatch[1] : 'Invoice';
+        
+        // Capture the version before clearing preview
+        const usedVersion = currentPreview?.version;
 
         setCreatedInvoice({
           invoiceId: response.invoice_id,
@@ -494,6 +536,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
           pdfUrl: response.pdf_url,
           emailSubject: response.email_subject || undefined,
           emailBody: response.email_body || undefined,
+          version: usedVersion,
         });
         setCurrentPreview(null);
 
@@ -1178,14 +1221,54 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-sm font-medium">
-                  Invoice preview ready
-                  {currentPreview?.version && currentPreview.version > 1 && (
-                    <span className="ml-2 px-1.5 py-0.5 text-xs bg-teal-100 text-teal-700 rounded">
-                      v{currentPreview.version}
-                    </span>
-                  )}
-                </span>
+                <span className="text-sm font-medium">Invoice preview ready</span>
+                
+                {/* Version dropdown - only show if there are multiple versions */}
+                {previewHistory.length > 1 ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowVersionDropdown(!showVersionDropdown)}
+                      className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-teal-100 text-teal-700 rounded hover:bg-teal-200 transition-colors"
+                    >
+                      v{currentPreview?.version || 1}
+                      <svg className={`w-3 h-3 transition-transform ${showVersionDropdown ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {showVersionDropdown && (
+                      <div className="absolute bottom-full left-0 mb-1 py-1 bg-white rounded-lg shadow-lg border border-stone-200 min-w-[80px] z-10">
+                        {previewHistory.map((item) => (
+                          <button
+                            key={item.version}
+                            onClick={async () => {
+                              setCurrentPreview(item.preview);
+                              setShowVersionDropdown(false);
+                              // Update backend so confirm uses the correct version
+                              if (currentSessionId) {
+                                try {
+                                  await chatApi.setPreviewData(currentSessionId, item.preview);
+                                } catch (error) {
+                                  console.error('Failed to update preview version:', error);
+                                }
+                              }
+                            }}
+                            className={`w-full px-3 py-1.5 text-xs text-left hover:bg-teal-50 ${
+                              currentPreview?.version === item.version ? 'bg-teal-50 text-teal-700 font-medium' : 'text-stone-700'
+                            }`}
+                          >
+                            v{item.version}
+                            {currentPreview?.version === item.version && ' ✓'}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : currentPreview?.version && currentPreview.version > 0 && (
+                  <span className="px-2 py-0.5 text-xs font-medium bg-teal-100 text-teal-700 rounded">
+                    v{currentPreview.version}
+                  </span>
+                )}
               </div>
               <button
                 onClick={handleConfirmInvoice}
@@ -1223,6 +1306,11 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                   </svg>
                 </div>
                 <span className="font-semibold text-sm">{createdInvoice.invoiceNumber}</span>
+                {createdInvoice.version && (
+                  <span className="px-1.5 py-0.5 text-xs bg-emerald-100 text-emerald-700 rounded font-medium">
+                    v{createdInvoice.version}
+                  </span>
+                )}
               </div>
 
               {/* Action buttons - compact */}
