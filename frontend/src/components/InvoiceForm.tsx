@@ -242,7 +242,7 @@ export default function InvoiceForm() {
               value={invoiceNumber}
               onChange={(e) => setInvoiceNumber(e.target.value)}
               required
-              placeholder="INV-2025-01"
+              placeholder={`INV-${new Date().getFullYear()}-001`}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>

@@ -171,6 +171,120 @@ Allow AI to generate/modify HTML templates based on:
 
 ---
 
+## UI Polish & Refinements
+
+### Global Issues
+
+#### Invoice Number Placeholder Wrong Year
+**Priority:** High  
+**Status:** Pending  
+**Location:** Manual Invoice Form  
+**Issue:** Shows "INV-2025-01" instead of "2026"
+
+#### Mixed Invoice Number Formats in History
+**Priority:** High  
+**Status:** Pending  
+**Location:** Invoice History  
+**Issue:** Old format (INV-2026-01-XX) vs new (SPECTRIO-2026-XXX) creates visual inconsistency
+
+#### Button Style Consistency
+**Priority:** Medium  
+**Status:** Pending  
+**Description:** Establish consistent button hierarchy:
+- **Primary**: Filled teal (Generate PDF, Create Invoice, Add Client)
+- **Secondary**: Outlined teal (Edit, View)
+- **Tertiary**: Text only (Dismiss, Cancel)
+- **Danger**: Outlined red (Delete) - currently red text feels harsh
+
+#### Success Banner Competes with Content
+**Priority:** Medium  
+**Status:** Pending  
+**Location:** Chat Interface  
+**Issue:** When both preview + success banner show, it's crowded. Consider making it more compact.
+
+---
+
+### Desktop Specific
+
+#### Chat Interface Polish
+- [ ] Success banner takes too much vertical space - make more compact
+- [ ] "Preview email" dropdown arrow is small - make it clearer it's expandable
+- [ ] v4 badge is subtle - could be slightly larger/more prominent
+- [ ] Long button row (Download, Preview PDF, Copy Email, View, Dismiss) - consider grouping or icons
+- [ ] Copy button at bottom right of messages feels orphaned
+
+#### Manual Form Polish
+- [ ] Form feels sparse - add subtle section dividers or groupings
+- [ ] Hours entry row: Date picker very wide - balance Date/Hours/Rate more evenly
+- [ ] No visual feedback for invalid/empty required fields
+- [ ] "Create Invoice" button could be more prominent
+
+#### Clients Page Polish
+- [ ] Cards lack visual hierarchy - make client name larger/bolder
+- [ ] "No email" / "No notes" could be lighter for more distinction
+- [ ] Delete button red text feels harsh - use outline style
+- [ ] Button row at bottom feels cramped - add more vertical padding
+
+#### Invoice History Table Polish
+- [ ] Actions column has 4 text links - icons would be cleaner (like mobile)
+- [ ] "Duplicate" in purple is inconsistent - should match other actions
+- [ ] Table rows lack hover state - add subtle background on hover
+- [ ] Filter section feels basic - polish date pickers
+
+---
+
+### Mobile Specific
+
+#### Chat History Sidebar
+- [ ] Close X button is small - increase tap target (min 44x44px)
+- [ ] Session list items need more padding for touch targets
+- [ ] No visual separator between sessions - add subtle dividers
+- [ ] Truncated text ("Invoice SPECTRIO-2026-004 creat...") - consider 2-line layout
+
+#### Chat Empty State
+- [ ] Example prompt cards feel flat - add subtle shadow/border
+- [ ] Hamburger icon could be larger for better tap target
+- [ ] Input area bottom hint text is very small
+- [ ] Send button disabled state not distinct enough
+
+#### Mobile Clients Page
+- [ ] Type badges wrap awkwardly on narrow screens - place below name?
+- [ ] Button row feels tight - consider stacking vertically
+- [ ] Cards lack visual depth - add subtle shadow/border
+- [ ] Email text could overflow - ensure truncation
+
+#### Mobile Invoice History
+- [ ] "Filters" dropdown needs chevron icon
+- [ ] Status dropdown tap target should be 44px minimum
+- [ ] Invoice number link could be bolder/more tappable-looking
+- [ ] Action icons at bottom feel cramped - more spacing
+
+---
+
+### Design System Standardization
+
+#### Typography Scale
+```
+Page titles: text-2xl font-bold
+Card titles: text-lg font-semibold  
+Labels: text-sm text-stone-500
+Body: text-sm or text-base
+```
+
+#### Card Styling
+```
+Border radius: rounded-lg (consistent)
+Shadow: shadow-sm or shadow (consistent)
+Padding: p-4 or p-6 (consistent)
+```
+
+#### Color Refinement
+- Keep teal primary (teal-600)
+- Soften red for delete (red-500 → red-400 or outline)
+- Remove purple from "Duplicate" - use teal or neutral
+
+---
+
 ## Technical Debt
 
 ### Consolidate Invoice Preview Logic

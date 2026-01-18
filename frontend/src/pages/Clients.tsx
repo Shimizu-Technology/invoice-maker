@@ -230,22 +230,22 @@ export default function Clients() {
             </button>
           </div>
         ) : (
-          /* Client Cards - Uniform height */
+          /* Client Cards - Uniform height with visual depth */
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {clients.map((client) => (
               <div
                 key={client.id}
-                className="bg-white rounded-xl border border-stone-200 p-4 sm:p-5 hover:shadow-md transition-shadow flex flex-col h-full"
+                className="bg-white rounded-xl border border-stone-200 shadow-sm p-5 sm:p-6 hover:shadow-md transition-shadow flex flex-col h-full"
               >
                 {/* Header - Fixed */}
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-4">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-stone-800 truncate">{client.name}</h3>
-                    <p className="text-sm text-stone-500 truncate h-5">
-                      {client.email || <span className="text-stone-300">No email</span>}
+                    <h3 className="text-lg font-bold text-stone-800 truncate">{client.name}</h3>
+                    <p className="text-sm text-stone-400 truncate mt-0.5">
+                      {client.email || <span className="italic">No email</span>}
                     </p>
                   </div>
-                  <span className="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-teal-100 text-teal-700 whitespace-nowrap">
+                  <span className="ml-2 px-2.5 py-1 text-xs font-medium rounded-full bg-teal-50 text-teal-700 border border-teal-200 whitespace-nowrap">
                     {getTemplateLabel(client.template_type)}
                   </span>
                 </div>
@@ -263,7 +263,7 @@ export default function Clients() {
                   <div className="pt-2 border-t border-stone-100">
                     <span className="text-stone-500">Notes:</span>
                     <p className="text-stone-600 mt-1 line-clamp-2 min-h-[2.5rem]">
-                      {client.company_context || <span className="text-stone-300 italic">No notes</span>}
+                      {client.company_context || <span className="text-stone-400 italic">No notes</span>}
                     </p>
                   </div>
                 </div>
@@ -278,13 +278,13 @@ export default function Clients() {
                   </Link>
                   <button
                     onClick={() => openEditModal(client)}
-                    className="flex-1 px-3 py-2 text-sm font-medium text-teal-700 bg-teal-50 rounded-lg hover:bg-teal-100 transition-colors min-h-[44px]"
+                    className="flex-1 px-3 py-2 text-sm font-medium text-teal-600 border border-teal-300 rounded-lg hover:bg-teal-50 transition-colors min-h-[44px]"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => setDeleteConfirm(client.id)}
-                    className="px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors min-h-[44px]"
+                    className="px-3 py-2 text-sm font-medium text-red-500 border border-red-200 rounded-lg hover:bg-red-50 transition-colors min-h-[44px]"
                   >
                     Delete
                   </button>

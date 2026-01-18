@@ -271,17 +271,17 @@ export default function History() {
         )}
 
         {/* Filters - Collapsible on Mobile */}
-        <div className="bg-white rounded-lg shadow p-4 mb-4 sm:mb-6">
+        <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-4 mb-4 sm:mb-6">
           {/* Mobile Filter Toggle */}
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="sm:hidden w-full flex items-center justify-between py-2 min-h-[44px]"
           >
-            <span className="font-medium text-gray-700">
-              Filters {hasActiveFilters && <span className="text-primary-600">•</span>}
+            <span className="font-medium text-stone-700">
+              Filters {hasActiveFilters && <span className="text-teal-600 ml-1">●</span>}
             </span>
             <svg
-              className={`h-5 w-5 text-gray-500 transform transition-transform ${showFilters ? 'rotate-180' : ''}`}
+              className={`h-5 w-5 text-stone-400 transform transition-transform ${showFilters ? 'rotate-180' : ''}`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -361,26 +361,26 @@ export default function History() {
         </div>
 
         {/* Invoice Table - Desktop */}
-        <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="hidden md:block bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
+          <table className="min-w-full divide-y divide-stone-200">
+            <thead className="bg-stone-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                   Invoice #
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                   Client
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-stone-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -397,7 +397,7 @@ export default function History() {
                 </tr>
               ) : (
                 invoices.map((invoice) => (
-                  <tr key={invoice.id} className="hover:bg-gray-50">
+                  <tr key={invoice.id} className="hover:bg-stone-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Link
                         to={`/invoices/${invoice.id}`}
@@ -471,7 +471,7 @@ export default function History() {
                       </button>
                       <button
                         onClick={() => handleDuplicate(invoice)}
-                        className="text-purple-600 hover:text-purple-800 mr-3"
+                        className="text-teal-600 hover:text-teal-800 mr-3"
                       >
                         Duplicate
                       </button>
@@ -490,23 +490,23 @@ export default function History() {
         </div>
 
         {/* Invoice Cards - Mobile */}
-        <div className="md:hidden space-y-4">
+        <div className="md:hidden space-y-3">
           {invoices.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-6 text-center text-gray-500">
+            <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-6 text-center text-stone-500">
               No invoices found
             </div>
           ) : (
             invoices.map((invoice) => (
-              <div key={invoice.id} className="bg-white rounded-lg shadow p-4">
+              <div key={invoice.id} className="bg-white rounded-xl border border-stone-200 shadow-sm p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <Link
                       to={`/invoices/${invoice.id}`}
-                      className="text-primary-600 hover:text-primary-800 font-semibold text-lg"
+                      className="text-teal-600 hover:text-teal-800 font-bold text-base"
                     >
                       {invoice.invoice_number}
                     </Link>
-                    <p className="text-gray-600 text-sm mt-1">
+                    <p className="text-stone-600 text-sm mt-0.5">
                       {getClientName(invoice.client_id)}
                     </p>
                   </div>
@@ -549,14 +549,14 @@ export default function History() {
                 </div>
                 
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-gray-500 text-sm">{formatDate(invoice.date)}</span>
-                  <span className="text-gray-900 font-bold text-lg">
+                  <span className="text-stone-500 text-sm">{formatDate(invoice.date)}</span>
+                  <span className="text-stone-900 font-bold text-lg">
                     {formatCurrency(invoice.total_amount)}
                   </span>
                 </div>
 
                 {/* Mobile Action Buttons */}
-                <div className="grid grid-cols-4 gap-2 pt-3 border-t border-gray-100">
+                <div className="grid grid-cols-4 gap-3 pt-3 border-t border-stone-100">
                   <button
                     onClick={() => navigate(`/invoices/${invoice.id}`)}
                     className="flex flex-col items-center py-2 text-primary-600 hover:bg-primary-50 rounded min-h-[44px]"
@@ -578,7 +578,7 @@ export default function History() {
                   </button>
                   <button
                     onClick={() => handleDuplicate(invoice)}
-                    className="flex flex-col items-center py-2 text-purple-600 hover:bg-purple-50 rounded min-h-[44px]"
+                    className="flex flex-col items-center py-2 text-teal-600 hover:bg-teal-50 rounded min-h-[44px]"
                   >
                     <svg className="h-5 w-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
