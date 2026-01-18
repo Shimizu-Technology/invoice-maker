@@ -11,7 +11,10 @@
 <body>
     <div class="invoice-header">
         <div class="company-info">
-            <div class="company-name">{{ user.name | default('Your Company Name') }}</div>
+            {% if personal_name %}
+            <div class="personal-name" style="font-size: 14pt; font-weight: bold; margin-bottom: 2px;">{{ personal_name }}</div>
+            {% endif %}
+            <div class="company-name" {% if personal_name %}style="font-size: 11pt; font-weight: normal;"{% endif %}>{{ user.name | default('Your Company Name') }}</div>
             <div class="company-details">
                 {% if user.email %}{{ user.email }}<br>{% endif %}
                 {% if user.address %}{{ user.address }}{% endif %}

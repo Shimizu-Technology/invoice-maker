@@ -47,6 +47,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [pendingClientCreation, setPendingClientCreation] = useState<PendingClientCreation | null>(null);
   const [createdInvoice, setCreatedInvoice] = useState<CreatedInvoice | null>(null);
+  const [dismissedInvoice, setDismissedInvoice] = useState<CreatedInvoice | null>(null);
   
   // Image upload state - support multiple images
   const [pendingImages, setPendingImages] = useState<Array<{ file: File; preview: string }>>([]);
@@ -146,9 +147,11 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
         // Preview exists but invoice not yet created
         setCurrentPreview(session.invoice_preview);
         setCreatedInvoice(null);
+        setDismissedInvoice(null);
       } else {
         setCurrentPreview(null);
         setCreatedInvoice(null);
+        setDismissedInvoice(null);
       }
       setPendingClientCreation(null);
     } catch (error) {
@@ -165,6 +168,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       setMessages([]);
       setCurrentPreview(null);
       setCreatedInvoice(null);
+      setDismissedInvoice(null);
       setPendingClientCreation(null);
       
       // Navigate to new session URL
@@ -185,6 +189,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
         setCurrentPreview(null);
         setPendingClientCreation(null);
         setCreatedInvoice(null);
+        setDismissedInvoice(null);
         // Navigate back to /chat
         navigate('/chat', { replace: true });
       }
@@ -1077,7 +1082,9 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                 </button>
                 <button
                   onClick={() => {
+                    setDismissedInvoice(createdInvoice); // Save for restore
                     setCreatedInvoice(null);
+                    setCurrentPreview(null); // Also clear preview so Generate PDF doesn't reappear
                     setEmailCopied(false);
                     setMarkedAsSent(false);
                   }}
@@ -1130,6 +1137,24 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Minimized invoice bar - shows after dismiss */}
+        {dismissedInvoice && !createdInvoice && (
+          <div className="px-4 py-2 border-t border-stone-200 bg-stone-50 flex items-center justify-between">
+            <span className="text-sm text-stone-600">
+              Invoice {dismissedInvoice.invoiceNumber} created
+            </span>
+            <button
+              onClick={() => {
+                setCreatedInvoice(dismissedInvoice);
+                setDismissedInvoice(null);
+              }}
+              className="text-sm text-teal-600 hover:text-teal-700 font-medium"
+            >
+              Show actions
+            </button>
           </div>
         )}
 

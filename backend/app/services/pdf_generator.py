@@ -33,6 +33,7 @@ class PDFGenerator:
         client: Any,
         hours_entries: list,
         user: Optional[dict] = None,
+        personal_name: Optional[str] = None,
     ) -> str:
         """
         Generate an hourly/contract invoice PDF.
@@ -42,6 +43,7 @@ class PDFGenerator:
             client: Client model or dict with client data
             hours_entries: List of hours entries
             user: Optional dict with user/company info (overrides config)
+            personal_name: Optional personal name to display above company name
 
         Returns:
             Path to the generated PDF file
@@ -63,6 +65,7 @@ class PDFGenerator:
             total_hours=total_hours,
             hourly_rate=hourly_rate,
             user=user,
+            personal_name=personal_name,
         )
 
         return self._generate_pdf(html_content, invoice)
@@ -219,18 +222,21 @@ class PDFGenerator:
         Returns:
             Path to the generated PDF file
         """
-        # Auto-detect Spectrio clients for special template
+        # Auto-detect Spectrio clients to add personal name
         client_name = client.name if hasattr(client, 'name') else client.get('name', '')
+        personal_name = kwargs.get("personal_name")
         if 'spectrio' in client_name.lower() and template_type == "hourly":
-            template_type = "spectrio"
+            # Use Leon Shimizu as personal name for Spectrio invoices
+            personal_name = personal_name or "Leon Shimizu"
 
         if template_type == "spectrio":
-            return self.generate_spectrio_invoice(
+            # Legacy support - redirect to hourly with personal name
+            return self.generate_hourly_invoice(
                 invoice=invoice,
                 client=client,
                 hours_entries=hours_entries or [],
                 user=kwargs.get("user"),
-                personal_name=kwargs.get("personal_name", "Leon Shimizu"),
+                personal_name=personal_name or "Leon Shimizu",
             )
         elif template_type == "hourly":
             return self.generate_hourly_invoice(
@@ -238,6 +244,7 @@ class PDFGenerator:
                 client=client,
                 hours_entries=hours_entries or [],
                 user=kwargs.get("user"),
+                personal_name=personal_name,
             )
         elif template_type == "tuition":
             return self.generate_tuition_invoice(

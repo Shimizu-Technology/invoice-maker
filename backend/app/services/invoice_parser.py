@@ -112,10 +112,24 @@ class InvoiceParser:
             },
         }
 
+    def _normalize_client_name(self, name: str) -> str:
+        """Normalize client name by removing common suffixes and extra whitespace."""
+        import re
+        # Remove common business suffixes
+        suffixes = [
+            r'\s+LLC\.?$', r'\s+Inc\.?$', r'\s+Corp\.?$', r'\s+Corporation$',
+            r'\s+Ltd\.?$', r'\s+Limited$', r'\s+Co\.?$', r'\s+Company$',
+            r'\s+LP$', r'\s+LLP$', r'\s+PC$', r'\s+PLLC$',
+        ]
+        normalized = name.strip()
+        for suffix in suffixes:
+            normalized = re.sub(suffix, '', normalized, flags=re.IGNORECASE)
+        return normalized.strip()
+
     def _find_or_suggest_client(
         self, client_name: str, db: Session
     ) -> Optional[Client]:
-        """Find a client by name (case-insensitive partial match)."""
+        """Find a client by name (case-insensitive, normalized match)."""
         if not client_name:
             return None
 
@@ -130,7 +144,22 @@ class InvoiceParser:
         client = db.query(Client).filter(
             Client.name.ilike(f"%{client_name}%")
         ).first()
-        return client
+        if client:
+            return client
+
+        # Normalized match - strip LLC, Inc, etc. and compare
+        normalized_input = self._normalize_client_name(client_name)
+        all_clients = db.query(Client).all()
+        for c in all_clients:
+            normalized_db = self._normalize_client_name(c.name)
+            # Check if normalized names match (case-insensitive)
+            if normalized_input.lower() == normalized_db.lower():
+                return c
+            # Also check if one contains the other
+            if normalized_input.lower() in normalized_db.lower() or normalized_db.lower() in normalized_input.lower():
+                return c
+
+        return None
 
     def _generate_invoice_number(self, client: Client, invoice_date: date, db: Session) -> str:
         """
