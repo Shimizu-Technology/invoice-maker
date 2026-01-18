@@ -612,8 +612,8 @@ export default function History() {
                   </span>
                 </div>
 
-                {/* Mobile Action Buttons */}
-                <div className="grid grid-cols-4 gap-3 pt-3 border-t border-stone-100">
+                {/* Mobile Action Buttons - 5 columns to fit all buttons on one row */}
+                <div className="grid grid-cols-5 gap-2 pt-3 border-t border-stone-100">
                   <button
                     onClick={() => navigate(`/invoices/${invoice.id}`)}
                     className="flex flex-col items-center py-2 text-primary-600 hover:bg-primary-50 rounded min-h-[44px]"

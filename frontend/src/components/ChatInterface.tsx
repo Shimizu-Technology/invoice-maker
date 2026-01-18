@@ -973,7 +973,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
           onDragOver={handleDragOver}
         >
           {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-center py-8 px-4">
+            <div className="flex flex-col items-center justify-center h-full text-center py-8">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-100 to-teal-50 flex items-center justify-center mb-4">
                 <svg className="w-8 h-8 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -1293,99 +1293,103 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
           </div>
         )}
 
-        {/* Invoice Created Success - Compact */}
+        {/* Invoice Created Success - Clean & Compact */}
         {createdInvoice && (
           <div className="px-4 sm:px-6 py-3 border-t border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50">
-            {/* Desktop: single row, Mobile: stacked */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              {/* Title */}
-              <div className="flex items-center gap-2 text-emerald-700 shrink-0">
-                <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+            {/* Header row with invoice info */}
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2 text-emerald-700 min-w-0">
+                <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
                   <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span className="font-semibold text-sm">{createdInvoice.invoiceNumber}</span>
+                <span className="font-semibold text-sm truncate">{createdInvoice.invoiceNumber}</span>
                 {createdInvoice.version && (
-                  <span className="px-1.5 py-0.5 text-xs bg-emerald-100 text-emerald-700 rounded font-medium">
+                  <span className="px-1.5 py-0.5 text-xs bg-emerald-100 text-emerald-700 rounded font-medium flex-shrink-0">
                     v{createdInvoice.version}
                   </span>
                 )}
               </div>
-
-              {/* Action buttons - compact */}
-              <div className="flex flex-wrap gap-1.5 sm:gap-2">
-                <button
-                  onClick={handleDownloadPdf}
-                  className="px-3 py-2 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-1.5 min-h-[36px] font-medium"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  Download
-                </button>
-                <button
-                  onClick={() => setShowPdfPreview(true)}
-                  className="px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5 min-h-[36px] font-medium"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Preview
-                </button>
-                {createdInvoice.emailBody && (
-                  <button
-                    onClick={handleCopyEmail}
-                    className={`px-3 py-2 text-white text-xs rounded-lg transition-colors flex items-center gap-1.5 min-h-[36px] font-medium ${
-                      emailCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-teal-600 hover:bg-teal-700'
-                    }`}
-                  >
-                    {emailCopied ? (
-                      <>
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                        </svg>
-                        Email
-                      </>
-                    )}
-                  </button>
-                )}
-                <button
-                  onClick={handleViewInvoice}
-                  className="px-3 py-2 bg-stone-500 text-white text-xs rounded-lg hover:bg-stone-600 transition-colors flex items-center gap-1.5 min-h-[36px]"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                  View
-                </button>
-                <button
-                  onClick={() => {
-                    setDismissedInvoice(createdInvoice); // Save for restore
-                    setCreatedInvoice(null);
-                    setCurrentPreview(null); // Also clear preview so Generate PDF doesn't reappear
-                    setEmailCopied(false);
-                    setMarkedAsSent(false);
-                  }}
-                  className="px-3 py-2 bg-white text-stone-500 text-xs rounded-lg hover:bg-stone-100 transition-colors border border-stone-200 min-h-[36px]"
-                >
-                  Dismiss
-                </button>
-              </div>
+              {/* Dismiss - subtle on right */}
+              <button
+                onClick={() => {
+                  setDismissedInvoice(createdInvoice);
+                  setCreatedInvoice(null);
+                  setCurrentPreview(null);
+                  setEmailCopied(false);
+                  setMarkedAsSent(false);
+                }}
+                className="text-stone-400 hover:text-stone-600 p-1 transition-colors flex-shrink-0"
+                title="Dismiss"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
-            {/* Email preview */}
+            {/* Action buttons - clean grid on mobile, inline on desktop */}
+            <div className="grid grid-cols-4 sm:flex sm:flex-wrap gap-2">
+              <button
+                onClick={handleDownloadPdf}
+                className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 bg-emerald-600 text-white text-xs rounded-lg hover:bg-emerald-700 transition-colors font-medium"
+                title="Download PDF"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span className="hidden sm:inline">Download</span>
+              </button>
+              <button
+                onClick={() => setShowPdfPreview(true)}
+                className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                title="Preview PDF"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span className="hidden sm:inline">Preview</span>
+              </button>
+              {createdInvoice.emailBody && (
+                <button
+                  onClick={handleCopyEmail}
+                  className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 text-white text-xs rounded-lg transition-colors font-medium ${
+                    emailCopied ? 'bg-green-600 hover:bg-green-700' : 'bg-teal-600 hover:bg-teal-700'
+                  }`}
+                  title={emailCopied ? 'Copied!' : 'Copy Email'}
+                >
+                  {emailCopied ? (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  )}
+                  <span className="hidden sm:inline">{emailCopied ? 'Copied!' : 'Email'}</span>
+                </button>
+              )}
+              <button
+                onClick={handleViewInvoice}
+                className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 bg-stone-500 text-white text-xs rounded-lg hover:bg-stone-600 transition-colors"
+                title="View in History"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                <span className="hidden sm:inline">View</span>
+              </button>
+            </div>
+
+            {/* Email preview - collapsible */}
             {createdInvoice.emailBody && (
-              <details className="mt-2">
-                <summary className="text-sm text-teal-700 cursor-pointer hover:text-teal-800 font-medium">
+              <details className="mt-3">
+                <summary className="text-sm text-teal-700 cursor-pointer hover:text-teal-800 font-medium flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                   Preview email
                 </summary>
                 <div className="mt-2 p-3 bg-white rounded-lg border border-stone-200 text-sm">
@@ -1399,16 +1403,16 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
               </details>
             )}
 
-            {/* Mark as Sent prompt - shows after copying email */}
+            {/* Mark as Sent prompt - compact */}
             {emailCopied && !markedAsSent && (
-              <div className="mt-3 flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="mt-3 flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+                <svg className="w-4 h-4 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
-                <span className="text-sm text-amber-800">Email copied! Did you send it?</span>
+                <span className="text-xs sm:text-sm text-amber-800 flex-1">Email copied!</span>
                 <button
                   onClick={handleMarkAsSent}
-                  className="ml-auto px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 transition-colors font-medium"
+                  className="px-2.5 py-1 bg-amber-600 text-white text-xs rounded-lg hover:bg-amber-700 transition-colors font-medium whitespace-nowrap"
                 >
                   Mark as Sent
                 </button>
@@ -1429,7 +1433,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
 
         {/* Minimized invoice bar - shows after dismiss */}
         {dismissedInvoice && !createdInvoice && (
-          <div className="px-4 py-2 border-t border-stone-200 bg-stone-50 flex items-center justify-between">
+          <div className="px-4 sm:px-6 py-2 border-t border-stone-200 bg-stone-50 flex items-center justify-between">
             <span className="text-sm text-stone-600">
               Invoice {dismissedInvoice.invoiceNumber} created
             </span>
@@ -1446,7 +1450,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       )}
 
       {/* Input */}
-        <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-stone-200 bg-stone-50">
+        <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-3 sm:py-4 border-t border-stone-200 bg-stone-50">
           {/* Hidden file input - supports multiple files */}
           <input
             type="file"
@@ -1503,7 +1507,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isLoading || pendingImages.length >= 5}
-              className="p-3 border border-stone-300 rounded-xl hover:bg-stone-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[48px] min-w-[48px] flex items-center justify-center text-stone-500 hover:text-teal-600 relative"
+              className="p-3 border border-stone-300 rounded-xl hover:bg-stone-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors h-[48px] w-[48px] flex items-center justify-center text-stone-500 hover:text-teal-600 relative flex-shrink-0"
               title={pendingImages.length >= 5 ? "Maximum 5 images" : "Upload images"}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1516,36 +1520,36 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
               )}
             </button>
             
-            <div className="flex-1 relative">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value);
-                  // Auto-resize textarea
-                  e.target.style.height = 'auto';
-                  e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
-                }}
-                onKeyDown={(e) => {
-                  // Enter to send, Shift+Enter for new line
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    if (input.trim() && !isLoading) {
-                      handleSubmit(e);
-                    }
+            {/* Textarea - direct flex child with flex-1, self-end keeps it aligned at bottom */}
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value);
+                // Auto-resize textarea
+                e.target.style.height = 'auto';
+                e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
+              }}
+              onKeyDown={(e) => {
+                // Enter to send, Shift+Enter for new line
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (input.trim() && !isLoading) {
+                    handleSubmit(e);
                   }
-                }}
-                onPaste={handlePaste}
-                placeholder="Type your message... (paste images with Cmd/Ctrl+V)"
-                className="w-full px-4 py-3 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 min-h-[48px] max-h-[150px] bg-white text-stone-800 placeholder:text-stone-400 resize-none overflow-y-auto leading-relaxed"
-                disabled={isLoading}
-                rows={1}
-              />
-            </div>
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-              className="px-4 sm:px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl hover:from-teal-700 hover:to-teal-800 disabled:from-stone-300 disabled:to-stone-400 disabled:cursor-not-allowed transition-all min-h-[48px] min-w-[48px] sm:min-w-auto shadow-sm flex items-center justify-center gap-2 self-end"
+                }
+              }}
+              onPaste={handlePaste}
+              placeholder="Type your message..."
+              className="flex-1 min-w-0 px-4 py-3 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 h-[48px] max-h-[150px] bg-white text-stone-800 placeholder:text-stone-400 resize-none overflow-y-auto leading-normal self-end"
+              disabled={isLoading}
+              rows={1}
+            />
+            
+            <button
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              className="px-4 sm:px-6 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl hover:from-teal-700 hover:to-teal-800 disabled:from-stone-300 disabled:to-stone-400 disabled:cursor-not-allowed transition-all h-[48px] min-w-[48px] sm:min-w-auto shadow-sm flex items-center justify-center gap-2 flex-shrink-0"
             >
               <span className="hidden sm:inline font-medium">Send</span>
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1553,8 +1557,13 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
               </svg>
             </button>
           </div>
+          {/* Desktop: show full keyboard shortcuts, Mobile: simplified */}
           <p className="text-xs text-stone-400 mt-1.5 text-center sm:text-left">
-            <kbd className="px-1.5 py-0.5 bg-stone-200 rounded text-stone-600 font-mono text-[10px]">Enter</kbd> send · <kbd className="px-1.5 py-0.5 bg-stone-200 rounded text-stone-600 font-mono text-[10px]">Shift+Enter</kbd> new line · Paste or drop images
+            <span className="hidden sm:inline">
+              <kbd className="px-1.5 py-0.5 bg-stone-200 rounded text-stone-600 font-mono text-[10px]">Enter</kbd> send · <kbd className="px-1.5 py-0.5 bg-stone-200 rounded text-stone-600 font-mono text-[10px]">Shift+Enter</kbd> new line · 
+            </span>
+            <span className="sm:hidden">Tap send · </span>
+            Paste or drop images
           </p>
         </form>
       </div>
