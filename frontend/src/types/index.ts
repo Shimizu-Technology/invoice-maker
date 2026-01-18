@@ -83,6 +83,8 @@ export interface InvoicePreview {
   email_subject?: string;
   email_body?: string;
   notes: string | null;
+  // Version tracking for preview iterations
+  version?: number;
 }
 
 export interface ChatMessage {

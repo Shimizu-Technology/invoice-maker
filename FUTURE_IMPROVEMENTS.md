@@ -91,17 +91,30 @@ Allow AI to generate/modify HTML templates based on:
 
 ## High Priority - Coming Soon
 
-### Invoice Version Tracking in Chat
-**Priority:** High  
-**Description:** When iterating on an invoice in chat (preview → edit → new preview), show version history inline:
-- Display "v1", "v2" badges on invoice previews in chat
-- Link versions together so you can see the progression
-- When viewing History, show which chat produced which invoice version
+### ~~Invoice Version Tracking in Chat (Preview Iterations)~~ ✅ COMPLETED
+**Status:** Implemented January 18, 2026  
+**Description:** Preview versions are now tracked during invoice creation:
+- Each preview in a chat session gets a version number (v1, v2, v3...)
+- Version badges displayed on preview cards in chat
+- "Invoice preview ready" bar shows version if > v1
+- Version counter resets when switching sessions
+
+---
+
+### Invoice Revision Tracking (Post-Creation)
+**Priority:** Medium  
+**Description:** After an invoice is created, track revisions as linked versions:
+- When user asks for changes after generating, create a new invoice linked to the original
+- Invoice numbers: `SPECTRIO-2026-001`, then `SPECTRIO-2026-001a`, `001b`, etc.
+- Add `parent_invoice_id` field to Invoice model
+- Show version history on invoice detail page
+- Allow viewing/downloading any version
 
 **Implementation approach:**
-- Add `parent_invoice_id` or `version` field to Invoice model
-- Track version lineage within a chat session
-- Display version info in chat UI
+- Add `parent_invoice_id` column to invoices table (nullable)
+- When creating a revision, link to the original invoice
+- Update invoice detail page to show version history
+- Add "View previous version" / "View next version" navigation
 
 ---
 

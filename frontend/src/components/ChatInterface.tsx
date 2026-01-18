@@ -37,6 +37,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentPreview, setCurrentPreview] = useState<InvoicePreview | null>(null);
+  const [previewVersion, setPreviewVersion] = useState(0); // Track preview iterations
   // Start with sidebar hidden on mobile, shown on desktop
   const [showSidebar, setShowSidebar] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -122,15 +123,26 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       }
       
       // Convert messages including invoice_preview and images
-      const convertedMessages: ChatMessage[] = session.messages.map(msg => ({
-        role: msg.role as 'user' | 'assistant',
-        content: msg.content,
-        timestamp: new Date(msg.timestamp || Date.now()),
-        invoicePreview: msg.invoice_preview || undefined,  // Map invoice preview from API
-        imageUrl: msg.image_url || undefined,  // Map single image URL from API (legacy)
-        imageUrls: msg.image_urls || undefined,  // Map multiple image URLs from API
-      }));
+      // Count previews to set version correctly
+      let versionCount = 0;
+      const convertedMessages: ChatMessage[] = session.messages.map(msg => {
+        const hasPreview = msg.invoice_preview !== null && msg.invoice_preview !== undefined;
+        if (hasPreview) {
+          versionCount++;
+        }
+        return {
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+          timestamp: new Date(msg.timestamp || Date.now()),
+          invoicePreview: hasPreview 
+            ? { ...msg.invoice_preview, version: msg.invoice_preview.version || versionCount }
+            : undefined,
+          imageUrl: msg.image_url || undefined,
+          imageUrls: msg.image_urls || undefined,
+        };
+      });
       setMessages(convertedMessages);
+      setPreviewVersion(versionCount);
       
       // Check if this session has a completed invoice (invoice_id in preview)
       if (session.invoice_preview?.invoice_id) {
@@ -167,6 +179,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       setCurrentSessionId(session.id);
       setMessages([]);
       setCurrentPreview(null);
+      setPreviewVersion(0); // Reset version counter for new session
       setCreatedInvoice(null);
       setDismissedInvoice(null);
       setPendingClientCreation(null);
@@ -209,15 +222,15 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
     const imagesToUpload = [...pendingImages];
     
     if (!messageOverride) {
-      setInput('');
+    setInput('');
       // Reset textarea height
       if (inputRef.current) {
         inputRef.current.style.height = 'auto';
       }
       
       // Add user message with image previews
-      setMessages((prev) => [
-        ...prev,
+    setMessages((prev) => [
+      ...prev,
         { 
           role: 'user', 
           content: userMessage, 
@@ -278,8 +291,14 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       };
 
       if (response.status === 'preview' && response.invoice_preview) {
-        assistantMessage.invoicePreview = response.invoice_preview;
-        setCurrentPreview(response.invoice_preview);
+        // Increment version for new preview
+        const newVersion = previewVersion + 1;
+        setPreviewVersion(newVersion);
+        
+        // Add version to the preview
+        const versionedPreview = { ...response.invoice_preview, version: newVersion };
+        assistantMessage.invoicePreview = versionedPreview;
+        setCurrentPreview(versionedPreview);
       }
 
       if (response.status === 'invoice_created' && response.pdf_url && response.invoice_id) {
@@ -638,8 +657,8 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
             </svg>
             New Chat
           </button>
-        </div>
-        
+      </div>
+
         {/* Quick start with client */}
         {clients.length > 0 && (
           <div className="p-3 border-b border-stone-200">
@@ -796,7 +815,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
               <div className="relative max-w-[85%] sm:max-w-[75%]">
                 <div
                   className={`rounded-2xl px-4 py-3 ${
-                    message.role === 'user'
+                message.role === 'user'
                       ? 'bg-gradient-to-br from-teal-600 to-teal-700 text-white rounded-br-md'
                       : 'bg-stone-100 text-stone-800 rounded-bl-md'
                   }`}
@@ -817,8 +836,8 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                   )}
                   <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{message.content}</p>
 
-                {/* Invoice Preview */}
-                {message.invoicePreview && (
+              {/* Invoice Preview */}
+              {message.invoicePreview && (
                   <div className="mt-4 p-4 bg-white rounded-xl border border-stone-200 text-stone-800 shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center">
@@ -827,19 +846,24 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                         </svg>
                       </div>
                       <h4 className="font-display font-semibold text-stone-700">Invoice Preview</h4>
+                      {message.invoicePreview.version && (
+                        <span className="px-2 py-0.5 text-xs font-medium bg-stone-100 text-stone-600 rounded-full">
+                          v{message.invoicePreview.version}
+                        </span>
+                      )}
                     </div>
-                    <div className="space-y-2 text-sm">
+                  <div className="space-y-2 text-sm">
                       <div className="grid grid-cols-2 gap-2">
                         <p><span className="text-stone-500">Client:</span> {message.invoicePreview.client_name}</p>
                         <p><span className="text-stone-500">Invoice #:</span> {message.invoicePreview.invoice_number}</p>
                         <p><span className="text-stone-500">Date:</span> {message.invoicePreview.date}</p>
-                        {message.invoicePreview.service_period_start && (
+                    {message.invoicePreview.service_period_start && (
                           <p><span className="text-stone-500">Period:</span> {message.invoicePreview.service_period_start} - {message.invoicePreview.service_period_end}</p>
                         )}
                       </div>
 
-                      {/* Hours Entries */}
-                      {message.invoicePreview.hours_entries.length > 0 && (
+                    {/* Hours Entries */}
+                    {message.invoicePreview.hours_entries.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-stone-100">
                           <p className="text-stone-500 font-medium mb-1">Hours:</p>
                           <div className="space-y-1 text-xs">
@@ -873,23 +897,23 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                               </button>
                             )}
                           </div>
-                        </div>
-                      )}
+                      </div>
+                    )}
 
-                      {/* Line Items */}
-                      {message.invoicePreview.line_items.length > 0 && (
+                    {/* Line Items */}
+                    {message.invoicePreview.line_items.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-stone-100">
                           <p className="text-stone-500 font-medium mb-1">Items:</p>
                           <div className="space-y-1 text-xs">
-                            {message.invoicePreview.line_items.map((item, i) => (
+                          {message.invoicePreview.line_items.map((item, i) => (
                               <div key={i} className="flex justify-between">
                                 <span>{item.description}</span>
                                 <span className="font-medium">{formatCurrency(item.amount)}</span>
                               </div>
                             ))}
                           </div>
-                        </div>
-                      )}
+                      </div>
+                    )}
 
                       <div className="mt-3 pt-3 border-t border-stone-200 flex justify-between items-center">
                         <span className="font-semibold text-stone-700">Total</span>
@@ -931,10 +955,10 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                   </button>
                 </div>
               </div>
-            </div>
-          ))}
+          </div>
+        ))}
 
-          {isLoading && (
+        {isLoading && (
             <div className="flex justify-start animate-fadeIn">
               <div className="bg-stone-100 rounded-2xl rounded-bl-md px-5 py-4">
                 <div className="flex space-x-1.5">
@@ -988,7 +1012,14 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span className="text-sm font-medium">Invoice preview ready</span>
+                <span className="text-sm font-medium">
+                  Invoice preview ready
+                  {currentPreview?.version && currentPreview.version > 1 && (
+                    <span className="ml-2 px-1.5 py-0.5 text-xs bg-teal-100 text-teal-700 rounded">
+                      v{currentPreview.version}
+                    </span>
+                  )}
+                </span>
               </div>
               <button
                 onClick={handleConfirmInvoice}
@@ -1024,8 +1055,8 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                   </svg>
                 </div>
                 <span className="font-display font-semibold">Invoice {createdInvoice.invoiceNumber} created!</span>
-              </div>
-              
+      </div>
+
               {/* Action buttons */}
               <div className="flex flex-wrap gap-2">
                 <button
@@ -1155,10 +1186,10 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
             >
               Show actions
             </button>
-          </div>
-        )}
+        </div>
+      )}
 
-        {/* Input */}
+      {/* Input */}
         <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-stone-200 bg-stone-50">
           {/* Hidden file input - supports multiple files */}
           <input
@@ -1255,9 +1286,9 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                 rows={1}
               />
             </div>
-            <button
-              type="submit"
-              disabled={isLoading || !input.trim()}
+          <button
+            type="submit"
+            disabled={isLoading || !input.trim()}
               className="px-4 sm:px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl hover:from-teal-700 hover:to-teal-800 disabled:from-stone-300 disabled:to-stone-400 disabled:cursor-not-allowed transition-all min-h-[48px] min-w-[48px] sm:min-w-auto shadow-sm flex items-center justify-center gap-2 self-end"
             >
               <span className="hidden sm:inline font-medium">Send</span>
@@ -1353,7 +1384,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                </button>
+          </button>
               </div>
             </div>
             
