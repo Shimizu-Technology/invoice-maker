@@ -1146,49 +1146,48 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
               </div>
             </div>
 
-              {/* Email preview */}
-              {createdInvoice.emailBody && (
-                <details className="mt-2">
-                  <summary className="text-sm text-teal-700 cursor-pointer hover:text-teal-800 font-medium">
-                    Preview email
-                  </summary>
-                  <div className="mt-2 p-3 bg-white rounded-lg border border-stone-200 text-sm">
-                    <p className="text-stone-500 mb-1">
-                      <span className="font-medium">Subject:</span> {createdInvoice.emailSubject}
-                    </p>
-                    <pre className="whitespace-pre-wrap text-stone-700 font-sans text-sm leading-relaxed">
-                      {createdInvoice.emailBody}
-                    </pre>
-                  </div>
-                </details>
-              )}
-
-              {/* Mark as Sent prompt - shows after copying email */}
-              {emailCopied && !markedAsSent && (
-                <div className="mt-3 flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
-                  <span className="text-sm text-amber-800">Email copied! Did you send it?</span>
-                  <button
-                    onClick={handleMarkAsSent}
-                    className="ml-auto px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 transition-colors font-medium"
-                  >
-                    Mark as Sent
-                  </button>
+            {/* Email preview */}
+            {createdInvoice.emailBody && (
+              <details className="mt-2">
+                <summary className="text-sm text-teal-700 cursor-pointer hover:text-teal-800 font-medium">
+                  Preview email
+                </summary>
+                <div className="mt-2 p-3 bg-white rounded-lg border border-stone-200 text-sm">
+                  <p className="text-stone-500 mb-1">
+                    <span className="font-medium">Subject:</span> {createdInvoice.emailSubject}
+                  </p>
+                  <pre className="whitespace-pre-wrap text-stone-700 font-sans text-sm leading-relaxed">
+                    {createdInvoice.emailBody}
+                  </pre>
                 </div>
-              )}
+              </details>
+            )}
 
-              {/* Sent confirmation */}
-              {markedAsSent && (
-                <div className="mt-3 flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  <span className="text-sm text-green-800">Invoice marked as sent!</span>
-                </div>
-              )}
-            </div>
+            {/* Mark as Sent prompt - shows after copying email */}
+            {emailCopied && !markedAsSent && (
+              <div className="mt-3 flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+                <span className="text-sm text-amber-800">Email copied! Did you send it?</span>
+                <button
+                  onClick={handleMarkAsSent}
+                  className="ml-auto px-3 py-1.5 bg-amber-600 text-white text-sm rounded-lg hover:bg-amber-700 transition-colors font-medium"
+                >
+                  Mark as Sent
+                </button>
+              </div>
+            )}
+
+            {/* Sent confirmation */}
+            {markedAsSent && (
+              <div className="mt-3 flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm text-green-800">Invoice marked as sent!</span>
+              </div>
+            )}
           </div>
         )}
 
