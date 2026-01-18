@@ -153,6 +153,49 @@ class PDFGenerator:
 
         return self._generate_pdf(html_content, invoice)
 
+    def generate_spectrio_invoice(
+        self,
+        invoice: Any,
+        client: Any,
+        hours_entries: list,
+        user: Optional[dict] = None,
+        personal_name: str = "Leon Shimizu",
+    ) -> str:
+        """
+        Generate a Spectrio-specific invoice PDF.
+
+        Args:
+            invoice: Invoice model or dict with invoice data
+            client: Client model or dict with client data
+            hours_entries: List of hours entries
+            user: Optional dict with user/company info (overrides config)
+            personal_name: Name to display at top of invoice
+
+        Returns:
+            Path to the generated PDF file
+        """
+        template = self.env.get_template("spectrio.html")
+
+        # Calculate totals
+        total_hours = sum(Decimal(str(e.hours if hasattr(e, 'hours') else e['hours'])) for e in hours_entries)
+        hourly_rate = Decimal(str(hours_entries[0].rate if hasattr(hours_entries[0], 'rate') else hours_entries[0]['rate'])) if hours_entries else Decimal("0")
+
+        # Use provided user info or fall back to config
+        if user is None:
+            user = settings.get_company_info()
+
+        html_content = template.render(
+            invoice=invoice,
+            client=client,
+            hours_entries=hours_entries,
+            total_hours=total_hours,
+            hourly_rate=hourly_rate,
+            user=user,
+            personal_name=personal_name,
+        )
+
+        return self._generate_pdf(html_content, invoice)
+
     def generate_invoice_pdf(
         self,
         invoice: Any,
@@ -170,13 +213,26 @@ class PDFGenerator:
             client: Client model or dict
             hours_entries: List of hours entries (for hourly template)
             line_items: List of line items (for project/tuition template)
-            template_type: One of "hourly", "tuition", "project"
+            template_type: One of "hourly", "tuition", "project", "spectrio"
             **kwargs: Additional template-specific arguments
 
         Returns:
             Path to the generated PDF file
         """
-        if template_type == "hourly":
+        # Auto-detect Spectrio clients for special template
+        client_name = client.name if hasattr(client, 'name') else client.get('name', '')
+        if 'spectrio' in client_name.lower() and template_type == "hourly":
+            template_type = "spectrio"
+
+        if template_type == "spectrio":
+            return self.generate_spectrio_invoice(
+                invoice=invoice,
+                client=client,
+                hours_entries=hours_entries or [],
+                user=kwargs.get("user"),
+                personal_name=kwargs.get("personal_name", "Leon Shimizu"),
+            )
+        elif template_type == "hourly":
             return self.generate_hourly_invoice(
                 invoice=invoice,
                 client=client,

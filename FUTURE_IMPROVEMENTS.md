@@ -33,14 +33,31 @@ A running list of planned enhancements and nice-to-have features.
 
 ---
 
-### Custom Invoice Templates Per Client
-**Priority:** Low (Future)  
-**Description:** Allow more customization of invoice formatting per client. Options to explore:
-- **Template Builder:** Store custom templates per client (logo, colors, layout, field order)
-- **More Template Varieties:** Add templates like "minimal", "detailed", "timesheet-style" that can be assigned per client
-- **AI-Generated Templates:** Have AI generate HTML/CSS based on an uploaded example invoice
+### Dynamic Template Customization
+**Priority:** Medium  
+**Description:** Allow more flexible invoice customization beyond static templates. Two approaches to explore:
 
-**Current state:** 3 templates (hourly, tuition, project) work well for most use cases. Revisit if specific formatting needs arise.
+#### Option B: Configurable Template Fields
+Store customization settings per client in the database:
+- `header_style`: "personal_name_first" | "company_first" | "logo"
+- `show_personal_name`: boolean
+- `personal_name`: string (e.g., "Leon Shimizu")
+- `show_timezone`: boolean
+- `custom_footer`: string
+- `hours_table_style`: "detailed" | "summary_only"
+
+The AI could then modify these settings based on user requests like "put my name at the top."
+
+#### Option C: AI-Generated Custom Templates
+Allow AI to generate/modify HTML templates based on:
+- User-uploaded example invoices (screenshots)
+- Natural language descriptions ("I want a minimalist invoice with my name prominently displayed")
+- Store generated templates per client for reuse
+
+**Risks:** Generated HTML could break PDF rendering. Would need validation/sandboxing.
+
+#### Current State
+4 templates exist (hourly, tuition, project, spectrio). The Spectrio template was created to match specific client requirements. Option B is recommended as the next step when more customization is needed.
 
 ---
 
@@ -72,6 +89,37 @@ A running list of planned enhancements and nice-to-have features.
 
 ---
 
+## High Priority - Coming Soon
+
+### Invoice Version Tracking in Chat
+**Priority:** High  
+**Description:** When iterating on an invoice in chat (preview → edit → new preview), show version history inline:
+- Display "v1", "v2" badges on invoice previews in chat
+- Link versions together so you can see the progression
+- When viewing History, show which chat produced which invoice version
+
+**Implementation approach:**
+- Add `parent_invoice_id` or `version` field to Invoice model
+- Track version lineage within a chat session
+- Display version info in chat UI
+
+---
+
+### Invoice Naming Convention Fix
+**Priority:** High  
+**Description:** Current naming is confusing:
+- `INV-2026-01-02` looks like a date (Jan 2, 2026)
+- `INV-2026-01-02-01` looks like more date parts, not a version
+
+**Proposed formats:**
+1. `INV-2026-001` (sequential within year)
+2. `SPECTRIO-2026-001` (client-prefixed, sequential within year)
+3. `INV-2026-0102` (date compressed) with `v1`, `v2` suffix for versions
+
+Need to decide on format and implement.
+
+---
+
 ## Technical Debt
 
 ### Consolidate Invoice Preview Logic
@@ -79,4 +127,4 @@ A running list of planned enhancements and nice-to-have features.
 
 ---
 
-*Last updated: January 17, 2026*
+*Last updated: January 18, 2026*

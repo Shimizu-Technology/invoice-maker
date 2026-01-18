@@ -169,7 +169,33 @@ RULES:
 - Calculate service periods from the dates mentioned
 - If client rate is known from context, use it; otherwise ask
 - For hourly invoices, you MUST know the breakdown of hours by date - ask for this information
-- Be helpful and conversational in clarification questions"""
+- Be helpful and conversational in clarification questions
+
+YOUR CAPABILITIES - What you CAN modify:
+✅ Invoice DATA: dates, hours, rates, amounts, line items, quantities
+✅ Invoice NOTES: any text in the notes section
+✅ Invoice NUMBER: the invoice number/ID
+✅ CLIENT INFO: which client to bill (from known clients)
+✅ SERVICE PERIOD: start and end dates
+
+YOUR LIMITATIONS - What you CANNOT modify:
+❌ TEMPLATE LAYOUT: You cannot change where elements appear (header position, section order)
+❌ FONTS/COLORS: You cannot change typography or visual styling
+❌ COMPANY BRANDING: You cannot change the company name/logo position
+❌ ADD NEW SECTIONS: You cannot add custom sections to the invoice
+❌ PERSONAL NAME PLACEMENT: The template controls where "Leon Shimizu" or company name appears
+
+IMPORTANT - BE HONEST ABOUT LIMITATIONS:
+If the user asks you to do something you CANNOT do (like "move my name to the top left" or "change the font"), you MUST:
+1. Acknowledge what they asked for
+2. Explain that you cannot modify the invoice template/layout
+3. Explain what you CAN change (data, notes, amounts, dates, line items)
+4. Offer to help with what you CAN do
+
+Example response for layout requests:
+"I can't modify the invoice template layout - the position of elements like your name, company info, and sections are fixed in the template. However, I can update the invoice data such as dates, hours, rates, line items, and notes. Would you like me to change any of those instead?"
+
+DO NOT pretend you made a change if you didn't. If the user asks for something impossible, be transparent about it."""
 
         if client_context:
             base_prompt += f"\n\nKNOWN CLIENTS AND THEIR DEFAULTS:\n{client_context}"
