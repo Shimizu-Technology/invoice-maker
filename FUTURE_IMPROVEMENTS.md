@@ -75,6 +75,17 @@ Allow AI to generate/modify HTML templates based on:
 
 ## Recently Completed ✅
 
+### Chat Input Alignment Fix (January 19, 2026)
+- Fixed horizontal alignment: all sections use consistent `px-4 sm:px-6` padding
+- Fixed vertical alignment: upload button, textarea, and send button all aligned at bottom with fixed 48px height
+- Removed wrapper div that was causing textarea to stretch incorrectly
+
+### Mobile Success Banner Redesign (January 19, 2026)
+- Compact header with X dismiss button instead of text button
+- 4-column icon-only grid for action buttons on mobile
+- Full labels shown on desktop with `sm:inline`
+- More compact mark-as-sent prompt
+
 ### Image Upload in Chat (January 17, 2026)
 - Paste screenshots directly with Cmd+V / Ctrl+V
 - Drag & drop images into chat
@@ -166,35 +177,37 @@ Allow AI to generate/modify HTML templates based on:
 **Issue:** Shows "INV-2025-01" instead of "2026"
 
 #### Mixed Invoice Number Formats in History
-**Priority:** High  
-**Status:** Pending  
+**Priority:** Medium  
+**Status:** Known limitation  
 **Location:** Invoice History  
-**Issue:** Old format (INV-2026-01-XX) vs new (SPECTRIO-2026-XXX) creates visual inconsistency
+**Issue:** Old format (INV-2026-01-XX) vs new (SPECTRIO-2026-XXX) creates visual inconsistency. Historical invoices retain original format.
 
 #### Button Style Consistency
 **Priority:** Medium  
-**Status:** Pending  
-**Description:** Establish consistent button hierarchy:
+**Status:** Partially addressed  
+**Description:** Button hierarchy established:
 - **Primary**: Filled teal (Generate PDF, Create Invoice, Add Client)
-- **Secondary**: Outlined teal (Edit, View)
-- **Tertiary**: Text only (Dismiss, Cancel)
-- **Danger**: Outlined red (Delete) - currently red text feels harsh
+- **Secondary**: Filled blue/stone (Preview, View)
+- **Tertiary**: Text only or X icon (Dismiss)
+- **Danger**: Outlined red (Delete)
 
-#### Success Banner Competes with Content
-**Priority:** Medium  
-**Status:** Pending  
-**Location:** Chat Interface  
-**Issue:** When both preview + success banner show, it's crowded. Consider making it more compact.
+#### ~~Success Banner Competes with Content~~ ✅ COMPLETED
+**Status:** Implemented January 19, 2026  
+**Description:** Success banner redesigned for mobile:
+- Compact header with X dismiss button
+- 4-column icon-only grid for action buttons on mobile
+- Full labels shown on desktop
+- More compact mark-as-sent prompt
 
 ---
 
 ### Desktop Specific
 
 #### Chat Interface Polish
-- [ ] Success banner takes too much vertical space - make more compact
-- [ ] "Preview email" dropdown arrow is small - make it clearer it's expandable
+- [x] Success banner takes too much vertical space - made more compact ✅
+- [x] "Preview email" dropdown arrow is small - added chevron icon ✅
 - [ ] v4 badge is subtle - could be slightly larger/more prominent
-- [ ] Long button row (Download, Preview PDF, Copy Email, View, Dismiss) - consider grouping or icons
+- [x] Long button row - now uses icons on mobile, full text on desktop ✅
 - [ ] Copy button at bottom right of messages feels orphaned
 
 #### Manual Form Polish
@@ -276,4 +289,4 @@ Padding: p-4 or p-6 (consistent)
 
 ---
 
-*Last updated: January 18, 2026*
+*Last updated: January 19, 2026*

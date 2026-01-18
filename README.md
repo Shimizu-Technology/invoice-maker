@@ -21,10 +21,13 @@ An AI-powered invoice generator with a chat interface. Describe your invoice in 
 
 - **AI Chat Interface** - Describe invoices naturally: "Create an invoice for Spectrio for Jan 1-15, here's my timesheet"
 - **Image Upload** - Paste screenshots or drag-drop timesheets for AI to extract hours
-- **Client Management** - Store client info, default rates, and contract templates
-- **PDF Generation** - Professional invoices with 3 templates (hourly, tuition, project)
+- **Client Management** - Store client info, default rates, invoice prefixes, and contract templates
+- **PDF Generation** - Professional invoices with multiple templates (hourly, tuition, project)
 - **Email Generation** - Auto-generated email body ready to paste into Gmail
 - **Status Tracking** - Track invoices through draft → generated → sent → paid
+- **Preview Versioning** - Track invoice preview iterations (v1, v2, v3...) during creation
+- **Archive Support** - Archive old chat sessions and invoices to keep things tidy
+- **Mobile Optimized** - Clean, touch-friendly UI for creating invoices on the go
 
 ## How It Works
 
