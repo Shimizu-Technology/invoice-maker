@@ -128,6 +128,49 @@ Allow AI to generate/modify HTML templates based on:
 
 ---
 
+## AI Context Enhancements
+
+### Richer Conversation History
+**Priority:** Medium  
+**Description:** Currently the AI only receives text content from conversation history. Enhance to include:
+
+**What's Missing:**
+- **Historical preview data**: Include structured JSON from previous previews in the chat, not just the text
+- **Previously created invoices**: Tell AI which invoices were already generated in this session (numbers, totals, etc.)
+- **Old image references**: Allow AI to reference images from earlier in the conversation
+
+**Current State:**
+- ✅ Current preview is now included in context (implemented Jan 18, 2026)
+- ✅ Last 20 messages (text only) are included
+- ✅ All client data is included
+- ❌ Historical preview JSON not included
+- ❌ Created invoice metadata not included
+- ❌ Old images not accessible
+
+**Implementation approach:**
+- Store preview JSON with each message that has `has_preview: true`
+- When invoice is created, add metadata to session (invoice_number, total, pdf_url)
+- Pass this metadata to AI in system prompt
+
+---
+
+### Preview Version Selection
+**Priority:** Low  
+**Description:** Allow users to select and generate a previous preview version instead of only the latest.
+
+**Use case:** User creates v1, modifies to v2, but decides v1 was better. Currently they must ask AI to "change it back." With this feature, they could click on v1 card and select "Use this version."
+
+**Current workaround:** Ask AI to reverse changes (e.g., "change the rate back to $50/hr") - this works well because AI now has context.
+
+**Proposed behavior:**
+- Each preview card in chat history gets a "Use this version" button
+- Clicking it sets that preview as the current one
+- "Generate PDF" button then uses that version
+
+**Note:** Low priority because the AI workaround is effective. Consider implementing if users frequently need to restore older versions.
+
+---
+
 ## Technical Debt
 
 ### Consolidate Invoice Preview Logic
