@@ -164,12 +164,13 @@ Always respond with valid JSON in one of these formats:
 RULES:
 - For hourly invoices, ALWAYS ask for the specific dates and hours for each day worked
 - For project/tuition invoices, always include line_items
-- Generate invoice numbers in format: CLIENT-YYYY-MM (e.g., SPECTRIO-{current_year}-01)
+- DO NOT generate invoice numbers - leave the invoice_number field empty or null. The system will auto-generate it using the client's prefix in format: PREFIX-YEAR-SEQ (e.g., SPECTRIO-{current_year}-001)
 - Today's date is {today_str} - use this as the invoice date unless specified otherwise
 - Calculate service periods from the dates mentioned
 - If client rate is known from context, use it; otherwise ask
 - For hourly invoices, you MUST know the breakdown of hours by date - ask for this information
 - Be helpful and conversational in clarification questions
+- Each client has an invoice_prefix (shown in context). The system uses this to generate sequential invoice numbers automatically
 
 YOUR CAPABILITIES - What you CAN modify:
 ✅ Invoice DATA: dates, hours, rates, amounts, line items, quantities

@@ -394,7 +394,7 @@ export default function Clients() {
                   className="w-full px-3 py-2.5 border border-stone-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 min-h-[44px]"
                   placeholder="INV"
                 />
-                <p className="text-xs text-stone-400 mt-1">e.g., "SPECTRIO" → SPECTRIO-2026-01-01</p>
+                <p className="text-xs text-stone-400 mt-1">Invoice numbers: {formData.invoice_prefix || 'INV'}-2026-001, {formData.invoice_prefix || 'INV'}-2026-002, etc.</p>
               </div>
 
               {/* Company Context / Notes */}

@@ -105,18 +105,13 @@ Allow AI to generate/modify HTML templates based on:
 
 ---
 
-### Invoice Naming Convention Fix
-**Priority:** High  
-**Description:** Current naming is confusing:
-- `INV-2026-01-02` looks like a date (Jan 2, 2026)
-- `INV-2026-01-02-01` looks like more date parts, not a version
-
-**Proposed formats:**
-1. `INV-2026-001` (sequential within year)
-2. `SPECTRIO-2026-001` (client-prefixed, sequential within year)
-3. `INV-2026-0102` (date compressed) with `v1`, `v2` suffix for versions
-
-Need to decide on format and implement.
+### ~~Invoice Naming Convention Fix~~ ✅ COMPLETED
+**Status:** Implemented January 18, 2026  
+**Description:** Invoice numbers now use format `PREFIX-YEAR-SEQ`:
+- `SPECTRIO-2026-001`, `SPECTRIO-2026-002`, etc.
+- Each client has a configurable `invoice_prefix`
+- Sequential numbers auto-increment per client per year
+- If a duplicate is created, adds letter suffix (a, b, c)
 
 ---
 

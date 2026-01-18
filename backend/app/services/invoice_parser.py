@@ -132,8 +132,45 @@ class InvoiceParser:
         ).first()
         return client
 
+    def _generate_invoice_number(self, client: Client, invoice_date: date, db: Session) -> str:
+        """
+        Generate a unique invoice number in format: PREFIX-YEAR-SEQ
+        
+        Examples:
+            - SPECTRIO-2026-001
+            - GUAM-2026-001
+            - INV-2026-015
+        """
+        prefix = client.invoice_prefix or "INV"
+        year = invoice_date.year
+        
+        # Find the highest sequence number for this client in this year
+        # Look for pattern like PREFIX-YEAR-XXX
+        pattern = f"{prefix}-{year}-%"
+        
+        existing_invoices = db.query(Invoice).filter(
+            Invoice.client_id == client.id,
+            Invoice.invoice_number.like(pattern)
+        ).all()
+        
+        max_seq = 0
+        for inv in existing_invoices:
+            # Extract the sequence number from the invoice number
+            try:
+                parts = inv.invoice_number.split("-")
+                if len(parts) >= 3:
+                    seq_part = parts[-1]
+                    # Handle cases like "001" or "001a" (version suffix)
+                    seq_num = int(''.join(filter(str.isdigit, seq_part[:3])))
+                    max_seq = max(max_seq, seq_num)
+            except (ValueError, IndexError):
+                continue
+        
+        next_seq = max_seq + 1
+        return f"{prefix}-{year}-{next_seq:03d}"
+    
     def _get_unique_invoice_number(self, base_number: str, db: Session) -> str:
-        """Generate a unique invoice number by appending a sequence if needed."""
+        """Ensure invoice number is unique by adding version suffix if needed."""
         if db is None:
             return base_number
 
@@ -144,20 +181,20 @@ class InvoiceParser:
         if not existing:
             return base_number
 
-        # Find the next available sequence number
-        seq = 1
-        while True:
-            candidate = f"{base_number}-{seq:02d}"
+        # Find the next available version letter (a, b, c, ...)
+        version = ord('a')
+        while version <= ord('z'):
+            candidate = f"{base_number}{chr(version)}"
             existing = db.query(Invoice).filter(
                 Invoice.invoice_number == candidate
             ).first()
             if not existing:
                 return candidate
-            seq += 1
-            if seq > 99:
-                # Fallback to timestamp
-                import time
-                return f"{base_number}-{int(time.time())}"
+            version += 1
+        
+        # Fallback to timestamp if we somehow run out of letters
+        import time
+        return f"{base_number}-{int(time.time())}"
 
     def _build_invoice_preview(self, invoice_data: dict, client: Client, db: Session = None) -> dict:
         """Build an invoice preview from extracted data."""
@@ -171,10 +208,8 @@ class InvoiceParser:
         # Generate invoice number if not provided
         invoice_number = invoice_data.get("invoice_number")
         if not invoice_number:
-            # Use client's invoice prefix if set, otherwise derive from name
-            prefix = client.invoice_prefix if client.invoice_prefix != "INV" else client.name.upper().replace(" ", "-")[:10]
-            base_number = f"{prefix}-{invoice_date.strftime('%Y-%m')}"
-            invoice_number = self._get_unique_invoice_number(base_number, db)
+            # Generate using client prefix: PREFIX-YEAR-SEQ format
+            invoice_number = self._generate_invoice_number(client, invoice_date, db)
 
         # Process entries based on type
         hours_entries = []
