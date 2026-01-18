@@ -184,7 +184,7 @@ export const chatApi = {
   // Messaging
   send: async (content: string, sessionId?: string, imageUrls?: string[]): Promise<ChatResponse> => {
     try {
-      const response = await api.post('/api/chat/', {
+      const response = await api.post('/api/chat', {
         content,
         session_id: sessionId,
         image_url: imageUrls?.[0],  // Primary image for legacy support
