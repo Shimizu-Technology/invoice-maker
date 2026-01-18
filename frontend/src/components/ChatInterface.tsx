@@ -544,6 +544,42 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
     }
   };
 
+  // Handle "Use this version" for historical preview cards
+  const handleUseThisVersion = async (messageId: string, preview: InvoicePreview) => {
+    if (!currentSessionId || !messageId) return;
+    
+    try {
+      // Call API to set this preview as current
+      const result = await chatApi.setPreviewVersion(currentSessionId, messageId);
+      
+      // Update local state with the restored preview
+      const restoredPreview = result.invoice_preview as InvoicePreview;
+      
+      // Add version number (next in sequence)
+      setPreviewVersion((prev) => prev + 1);
+      restoredPreview.version = previewVersion + 1;
+      
+      setCurrentPreview(restoredPreview);
+      
+      // Clear any created invoice since we're now working with a new preview
+      setCreatedInvoice(null);
+      setMarkedAsSent(false);
+      setDismissedInvoice(null);
+      
+      // Add a message indicating the version was restored
+      const restoreMessage: ChatMessage = {
+        role: 'assistant',
+        content: `Restored invoice preview v${preview.version || '?'} as the current version. You can now generate the PDF or make further changes.`,
+        timestamp: new Date(),
+        invoicePreview: restoredPreview,
+      };
+      setMessages((prev) => [...prev, restoreMessage]);
+      
+    } catch (err) {
+      console.error('Failed to restore preview version:', err);
+    }
+  };
+
   const handleCopyMessage = async (content: string, messageIndex: number) => {
     try {
       await navigator.clipboard.writeText(content);
@@ -956,6 +992,19 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                           {formatCurrency(message.invoicePreview.total_amount)}
                         </span>
                       </div>
+                      
+                      {/* "Use this version" button - only for historical previews with message ID */}
+                      {message.id && message.invoicePreview.version && (
+                        <button
+                          onClick={() => handleUseThisVersion(message.id!, message.invoicePreview!)}
+                          className="mt-3 w-full py-2 px-3 text-sm text-teal-600 border border-teal-300 rounded-lg hover:bg-teal-50 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Use this version
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}

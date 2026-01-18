@@ -88,10 +88,12 @@ export interface InvoicePreview {
 }
 
 export interface ChatMessage {
+  id?: string;  // Message ID from database (for "Use this version" feature)
   role: 'user' | 'assistant';
   content: string;
   timestamp?: Date;
   invoicePreview?: InvoicePreview;
+  previewJson?: string;  // Raw preview JSON (for version selection)
   imageUrl?: string;  // Single image (legacy/first image)
   imageUrls?: string[];  // Multiple images
 }

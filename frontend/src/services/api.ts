@@ -7,6 +7,7 @@ import type { AxiosInstance, AxiosError } from 'axios';
 import type {
   Client,
   Invoice,
+  InvoicePreview,
   ChatResponse,
   ChatSessionInfo,
   ChatSessionDetail,
@@ -233,6 +234,16 @@ export const chatApi = {
     } catch (error) {
       console.error('Failed to save event:', error);
       // Don't throw - event saving is not critical
+    }
+  },
+
+  // Set a specific preview version as current (for "Use this version" feature)
+  setPreviewVersion: async (sessionId: string, messageId: string): Promise<{ invoice_preview: InvoicePreview }> => {
+    try {
+      const response = await api.post(`/api/chat/sessions/${sessionId}/set-preview?message_id=${messageId}`);
+      return response.data;
+    } catch (error) {
+      throw handleError(error as AxiosError);
     }
   },
 

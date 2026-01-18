@@ -78,6 +78,9 @@ class ChatMessage(Base):
     # Optional: store invoice preview with this message
     has_preview: Mapped[bool] = mapped_column(default=False)
     
+    # Store the actual preview JSON data (when has_preview is True)
+    preview_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
     )

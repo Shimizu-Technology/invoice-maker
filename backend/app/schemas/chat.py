@@ -32,10 +32,12 @@ class ChatMessageCreate(BaseModel):
 
 class ChatMessage(BaseModel):
     """Schema for a chat message."""
+    id: Optional[str] = None  # Message ID for version selection
     role: ChatRole
     content: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     invoice_preview: Optional[Any] = None  # Include invoice preview stored with message
+    preview_json: Optional[str] = None  # Raw preview JSON for version selection
     image_url: Optional[str] = None  # URL of attached image (legacy/first image)
     image_urls: Optional[list[str]] = None  # URLs of multiple attached images
 

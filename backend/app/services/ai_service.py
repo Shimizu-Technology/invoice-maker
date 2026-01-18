@@ -81,7 +81,29 @@ class AIService:
 
         messages = []
         if conversation_history:
-            messages.extend(conversation_history)
+            # Process conversation history, enriching with preview context
+            for msg in conversation_history:
+                enriched_content = msg.get("content", "")
+                
+                # If message had a preview, append summary to content
+                if msg.get("preview_json"):
+                    try:
+                        preview = json.loads(msg["preview_json"])
+                        preview_summary = f"\n[PREVIEW: {preview.get('client_name', 'Unknown')} - ${preview.get('total_amount', 0):.2f}, Invoice #{preview.get('invoice_number', 'N/A')}]"
+                        enriched_content += preview_summary
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                
+                # If message had images, note it
+                if msg.get("image_urls"):
+                    try:
+                        urls = json.loads(msg["image_urls"]) if isinstance(msg["image_urls"], str) else msg["image_urls"]
+                        if urls:
+                            enriched_content += f"\n[{len(urls)} image(s) attached]"
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+                
+                messages.append({"role": msg["role"], "content": enriched_content})
         
         # Build the user message content (with optional images)
         if image_urls and len(image_urls) > 0:
@@ -122,6 +144,12 @@ class AIService:
 IMPORTANT: Today's date is {today_str}. The current year is {current_year}. Always use {current_year} for dates unless explicitly told otherwise.
 
 IMAGE CONTEXT: The user may attach screenshots or images containing invoice details, timesheets, work logs, or other context. If an image is provided, carefully analyze it to extract relevant information like hours worked, dates, line items, amounts, or any other invoice-related data. Combine the image information with the user's text message.
+
+CONVERSATION HISTORY CONTEXT:
+- Messages in the conversation history may include [PREVIEW: ...] annotations showing previous invoice previews
+- Messages may include [X image(s) attached] to indicate images were sent earlier
+- You can reference this context when the user asks about previous versions or earlier data
+- Example: If user says "use the rate from v1", look for the first [PREVIEW: ...] annotation
 
 CRITICAL - DATA PRIORITY:
 1. ALWAYS prioritize data from images over client defaults (rates, amounts, hours)

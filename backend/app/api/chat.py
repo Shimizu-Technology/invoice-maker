@@ -56,12 +56,32 @@ def get_or_create_session(
 
 
 def get_conversation_history(session: ChatSession, limit: int = 20) -> list[dict]:
-    """Get conversation history for AI context."""
+    """Get conversation history for AI context.
+    
+    Includes:
+    - Message role and content
+    - Preview JSON for messages with invoice previews
+    - Image URLs for messages with attached images
+    """
     messages = session.messages[-limit:] if len(session.messages) > limit else session.messages
-    return [
-        {"role": msg.role.value, "content": msg.content}
-        for msg in messages
-    ]
+    history = []
+    
+    for msg in messages:
+        entry = {"role": msg.role.value, "content": msg.content}
+        
+        # Include preview JSON if this message had a preview
+        if msg.has_preview and msg.preview_json:
+            entry["preview_json"] = msg.preview_json
+        
+        # Include image URLs if present (Feature 2 will use this)
+        if msg.image_urls_json:
+            entry["image_urls"] = msg.image_urls_json
+        elif msg.image_url:
+            entry["image_urls"] = json.dumps([msg.image_url])
+        
+        history.append(entry)
+    
+    return history
 
 
 @router.get("/sessions", response_model=list[ChatSessionInfo])
@@ -162,11 +182,26 @@ async def get_session(session_id: str, db: Session = Depends(get_db)):
             except (json.JSONDecodeError, TypeError):
                 pass
         
+        # For messages with previews, use the stored preview JSON, not the session-level one
+        msg_preview = None
+        msg_preview_json = None
+        if msg.has_preview and msg.preview_json:
+            try:
+                msg_preview = json.loads(msg.preview_json)
+                msg_preview_json = msg.preview_json  # Raw JSON for version selection
+            except (json.JSONDecodeError, TypeError):
+                pass
+        elif msg.has_preview:
+            # Fallback to session preview for older messages without stored preview
+            msg_preview = session_preview
+        
         messages.append(ChatMessageSchema(
+            id=msg.id,  # Include message ID for version selection
             role=ChatRole(msg.role.value),
             content=msg.content,
             timestamp=msg.created_at,
-            invoice_preview=session_preview if msg.has_preview else None,
+            invoice_preview=msg_preview,
+            preview_json=msg_preview_json,
             image_url=msg.image_url,
             image_urls=image_urls,
         ))
@@ -236,6 +271,45 @@ async def save_event_message(
         "success": True,
         "message": "Event saved to chat history",
         "event_type": event.event_type,
+    }
+
+
+@router.post("/sessions/{session_id}/set-preview")
+async def set_preview_version(
+    session_id: str,
+    message_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Set a specific message's preview as the current preview for the session.
+    
+    Used when user clicks "Use this version" on an older preview card.
+    """
+    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Find the message with the preview
+    message = db.query(ChatMessage).filter(
+        ChatMessage.id == message_id,
+        ChatMessage.session_id == session_id,
+        ChatMessage.has_preview == True
+    ).first()
+    
+    if not message or not message.preview_json:
+        raise HTTPException(status_code=404, detail="Preview not found")
+    
+    # Set this preview as the current session preview
+    session.invoice_preview_json = message.preview_json
+    db.commit()
+    
+    # Return the preview data
+    preview_data = json.loads(message.preview_json)
+    
+    return {
+        "success": True,
+        "message": "Preview restored",
+        "invoice_preview": preview_data,
     }
 
 
@@ -338,12 +412,13 @@ async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
         if preview_data.get("client_id") and not session.client_id:
             session.client_id = preview_data["client_id"]
         
-        # Save assistant response
+        # Save assistant response with preview JSON
         assistant_msg = ChatMessage(
             session_id=session.id,
             role=MessageRole.ASSISTANT,
             content=result["message"],
             has_preview=True,
+            preview_json=json.dumps(preview_data),  # Store full preview for history
         )
         db.add(assistant_msg)
         db.commit()
