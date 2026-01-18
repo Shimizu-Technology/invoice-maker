@@ -508,7 +508,11 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
   const handleCopyEmail = async () => {
     if (createdInvoice?.emailBody) {
       try {
-        await navigator.clipboard.writeText(createdInvoice.emailBody);
+        // Include subject line with the body
+        const emailText = createdInvoice.emailSubject 
+          ? `Subject: ${createdInvoice.emailSubject}\n\n${createdInvoice.emailBody}`
+          : createdInvoice.emailBody;
+        await navigator.clipboard.writeText(emailText);
         setEmailCopied(true);
       } catch (err) {
         console.error('Failed to copy email:', err);
@@ -521,6 +525,14 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       try {
         await invoicesApi.update(createdInvoice.invoiceId, { status: 'sent' });
         setMarkedAsSent(true);
+        
+        // Add a message to the chat so it's tracked in history
+        const sentMessage: ChatMessage = {
+          role: 'assistant',
+          content: `✅ Invoice ${createdInvoice.invoiceNumber} has been marked as sent.`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, sentMessage]);
       } catch (err) {
         console.error('Failed to mark as sent:', err);
       }
