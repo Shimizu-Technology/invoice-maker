@@ -254,6 +254,14 @@ async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
 
     # Get conversation history
     history = get_conversation_history(session)
+    
+    # Get current invoice preview if one exists (for modifications)
+    current_preview = None
+    if session.invoice_preview_json:
+        try:
+            current_preview = json.loads(session.invoice_preview_json)
+        except json.JSONDecodeError:
+            pass
 
     # Process the message (with optional images)
     # Use image_urls if provided, otherwise fall back to single image_url
@@ -263,6 +271,7 @@ async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
         db=db,
         conversation_history=history[:-1],  # Exclude current message
         image_urls=image_urls,  # Pass image URLs for vision processing
+        current_preview=current_preview,  # Pass current preview for modifications
     )
 
     # Handle different response types

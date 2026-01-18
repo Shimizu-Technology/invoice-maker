@@ -21,6 +21,7 @@ class InvoiceParser:
         db: Session,
         conversation_history: Optional[list[dict]] = None,
         image_urls: Optional[list[str]] = None,
+        current_preview: Optional[dict] = None,
     ) -> dict:
         """
         Process a chat message and extract/create invoice.
@@ -30,6 +31,7 @@ class InvoiceParser:
             db: Database session
             conversation_history: Previous messages in conversation
             image_urls: Optional URLs of attached images for context
+            current_preview: Optional current invoice preview to modify
 
         Returns:
             Response dict with status and data
@@ -43,6 +45,7 @@ class InvoiceParser:
             client_context=client_context,
             conversation_history=conversation_history,
             image_urls=image_urls,
+            current_preview=current_preview,
         )
 
         if extraction.get("status") == "clarification_needed":

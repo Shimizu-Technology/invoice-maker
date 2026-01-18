@@ -60,6 +60,7 @@ class AIService:
         client_context: Optional[str] = None,
         conversation_history: Optional[list[dict]] = None,
         image_urls: Optional[list[str]] = None,
+        current_preview: Optional[dict] = None,
     ) -> dict:
         """
         Extract invoice data from natural language input.
@@ -69,11 +70,12 @@ class AIService:
             client_context: Optional context about known clients
             conversation_history: Optional previous messages in conversation
             image_urls: Optional URLs of attached images for context
+            current_preview: Optional current invoice preview being edited
 
         Returns:
             Extracted invoice data or clarification request
         """
-        system_prompt = self._build_extraction_prompt(client_context)
+        system_prompt = self._build_extraction_prompt(client_context, current_preview)
 
         messages = []
         if conversation_history:
@@ -106,7 +108,7 @@ class AIService:
 
         return self._parse_extraction_response(response)
 
-    def _build_extraction_prompt(self, client_context: Optional[str] = None) -> str:
+    def _build_extraction_prompt(self, client_context: Optional[str] = None, current_preview: Optional[dict] = None) -> str:
         """Build the system prompt for invoice extraction."""
         today = date.today()
         today_str = today.strftime("%Y-%m-%d")
@@ -125,6 +127,13 @@ CRITICAL - DATA PRIORITY:
 3. If the image shows a specific rate, use that rate instead of the client's default rate
 4. Only fall back to client default rates if no rate information is available anywhere
 5. For HOURLY invoices: Include ALL days in the date range from the image/timesheet, INCLUDING days with 0 hours. This shows the complete pay period.
+
+MODIFYING EXISTING PREVIEWS:
+If there is a "CURRENT INVOICE PREVIEW" section below, the user is asking you to MODIFY an existing invoice.
+- Use the existing preview as your starting point
+- ONLY change what the user specifically asks you to change
+- Keep all other data the same
+- Return the full updated invoice_data with the modifications applied
 
 INVOICE TYPES:
 1. "hourly" - For contract work billed by hours (e.g., consulting, development)
@@ -200,6 +209,18 @@ DO NOT pretend you made a change if you didn't. If the user asks for something i
 
         if client_context:
             base_prompt += f"\n\nKNOWN CLIENTS AND THEIR DEFAULTS:\n{client_context}"
+
+        # Include current preview if one exists - this is critical for modifications
+        if current_preview:
+            import json
+            preview_json = json.dumps(current_preview, indent=2, default=str)
+            base_prompt += f"""
+
+CURRENT INVOICE PREVIEW (user is editing this):
+{preview_json}
+
+The user wants to modify this existing invoice. Apply their requested changes and return the updated invoice_data.
+Keep all fields that they don't explicitly ask to change."""
 
         return base_prompt
 
