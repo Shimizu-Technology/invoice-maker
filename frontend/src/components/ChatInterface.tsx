@@ -299,6 +299,13 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
         const versionedPreview = { ...response.invoice_preview, version: newVersion };
         assistantMessage.invoicePreview = versionedPreview;
         setCurrentPreview(versionedPreview);
+        
+        // Clear any previously created invoice - user is now working on a new/modified invoice
+        // This prevents confusion with old success banner showing alongside new preview
+        if (createdInvoice) {
+          setCreatedInvoice(null);
+          setDismissedInvoice(null);
+        }
       }
 
       if (response.status === 'invoice_created' && response.pdf_url && response.invoice_id) {
@@ -398,8 +405,19 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       };
 
       if (retryResponse.status === 'preview' && retryResponse.invoice_preview) {
-        assistantMessage.invoicePreview = retryResponse.invoice_preview;
-        setCurrentPreview(retryResponse.invoice_preview);
+        // Increment version for new preview
+        const newVersion = previewVersion + 1;
+        setPreviewVersion(newVersion);
+        
+        const versionedPreview = { ...retryResponse.invoice_preview, version: newVersion };
+        assistantMessage.invoicePreview = versionedPreview;
+        setCurrentPreview(versionedPreview);
+        
+        // Clear any previously created invoice
+        if (createdInvoice) {
+          setCreatedInvoice(null);
+          setDismissedInvoice(null);
+        }
       }
 
       setMessages((prev) => [...prev, assistantMessage]);
