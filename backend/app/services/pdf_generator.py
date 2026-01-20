@@ -78,6 +78,7 @@ class PDFGenerator:
         due_date: Optional[date] = None,
         payment_link: Optional[str] = None,
         user: Optional[dict] = None,
+        personal_name: Optional[str] = None,
     ) -> str:
         """
         Generate a tuition invoice PDF.
@@ -89,6 +90,7 @@ class PDFGenerator:
             due_date: Optional due date
             payment_link: Optional payment link URL
             user: Optional dict with user/company info (overrides config)
+            personal_name: Optional personal name to display above company name
 
         Returns:
             Path to the generated PDF file
@@ -106,6 +108,7 @@ class PDFGenerator:
             due_date=due_date,
             payment_link=payment_link,
             user=user,
+            personal_name=personal_name,
         )
 
         return self._generate_pdf(html_content, invoice)
@@ -117,6 +120,7 @@ class PDFGenerator:
         line_items: list,
         installment_info: Optional[str] = None,
         user: Optional[dict] = None,
+        personal_name: Optional[str] = None,
     ) -> str:
         """
         Generate a project/itemized invoice PDF.
@@ -127,6 +131,7 @@ class PDFGenerator:
             line_items: List of line items
             installment_info: Optional installment info (e.g., "Payment 4/6")
             user: Optional dict with user/company info (overrides config)
+            personal_name: Optional personal name to display above company name
 
         Returns:
             Path to the generated PDF file
@@ -152,6 +157,7 @@ class PDFGenerator:
             discount=None,
             tax=None,
             user=user,
+            personal_name=personal_name,
         )
 
         return self._generate_pdf(html_content, invoice)
@@ -254,6 +260,7 @@ class PDFGenerator:
                 due_date=kwargs.get("due_date"),
                 payment_link=kwargs.get("payment_link"),
                 user=kwargs.get("user"),
+                personal_name=personal_name,
             )
         elif template_type == "project":
             return self.generate_project_invoice(
@@ -262,6 +269,7 @@ class PDFGenerator:
                 line_items=line_items or [],
                 installment_info=kwargs.get("installment_info"),
                 user=kwargs.get("user"),
+                personal_name=personal_name,
             )
         else:
             raise ValueError(f"Unknown template type: {template_type}")

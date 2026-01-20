@@ -31,11 +31,24 @@ body {
     text-align: left;
 }
 
-.company-name {
-    font-size: 16pt;
+.personal-name {
+    font-size: 18pt;
     font-weight: bold;
     color: #000;
+    margin-bottom: 2px;
+}
+
+.company-name {
+    font-size: 14pt;
+    font-weight: normal;
+    color: #333;
     margin-bottom: 3px;
+}
+
+/* When personal name is present, adjust company name styling */
+.personal-name + .company-name {
+    font-size: 11pt;
+    color: #666;
 }
 
 .company-details {

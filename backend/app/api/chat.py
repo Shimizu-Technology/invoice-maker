@@ -581,12 +581,16 @@ async def _confirm_invoice(session: ChatSession, db: Session) -> ChatResponse:
         client = db.query(Client).filter(Client.id == invoice.client_id).first()
         template_type = preview.get("invoice_type", "hourly")
 
+        # Get personal_name from preview if specified
+        personal_name = preview.get("personal_name")
+        
         pdf_path = pdf_generator.generate_invoice_pdf(
             invoice=invoice,
             client=client,
             hours_entries=list(invoice.hours_entries),
             line_items=list(invoice.line_items),
             template_type=template_type,
+            personal_name=personal_name,
         )
 
         # Update invoice with PDF path and set status to generated
