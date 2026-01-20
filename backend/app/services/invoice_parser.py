@@ -296,6 +296,7 @@ class InvoiceParser:
             "line_items": line_items,
             "total_amount": float(total_amount),
             "notes": invoice_data.get("notes"),
+            "personal_name": invoice_data.get("personal_name"),
         }
 
     def _parse_date(self, date_str: Optional[str]) -> Optional[date]:
