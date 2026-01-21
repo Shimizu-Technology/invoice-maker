@@ -209,61 +209,56 @@ export default function History() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-teal-50/30">
+      {/* Header - Glassmorphism style */}
+      <header className="sticky top-0 z-50 glass border-b border-stone-200/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                {filteredClientName ? `${filteredClientName} - Invoices` : 'Invoice History'}
-              </h1>
-              {filteredClientName && (
-                <button
-                  onClick={clearFilters}
-                  className="text-sm text-teal-600 hover:text-teal-800 mt-1"
-                >
-                  ← View all invoices
-                </button>
-              )}
-            </div>
+            {/* Logo */}
+            <Link to="/chat" className="flex items-center gap-2 group">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center shadow-lg shadow-teal-500/20">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <span className="font-display text-lg sm:text-xl font-semibold text-stone-800">
+                Invoice<span className="text-teal-600">Maker</span>
+              </span>
+            </Link>
             
             {/* Desktop Navigation */}
-            <nav className="hidden sm:flex space-x-4">
+            <nav className="hidden sm:flex items-center gap-2">
               <Link
-                to="/"
-                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                to="/clients"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100 text-sm font-medium"
               >
-                Dashboard
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Clients
+              </Link>
+              <Link
+                to="/history"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-100 text-teal-700 text-sm font-medium"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                History
               </Link>
             </nav>
 
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="sm:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="sm:hidden p-2 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors"
               aria-label="Toggle menu"
             >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 {mobileMenuOpen ? (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 ) : (
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 )}
               </svg>
             </button>
@@ -271,16 +266,44 @@ export default function History() {
 
           {/* Mobile Navigation Menu */}
           {mobileMenuOpen && (
-            <nav className="sm:hidden mt-4 pb-2 border-t border-gray-200 pt-4">
+            <nav className="sm:hidden mt-3 pb-1 pt-3 border-t border-stone-200 animate-fadeIn space-y-1">
               <Link
-                to="/"
-                className="block text-gray-600 hover:text-gray-900 px-3 py-3 rounded-md text-base font-medium min-h-[44px] flex items-center"
+                to="/clients"
+                className="flex items-center gap-3 text-stone-600 hover:text-stone-900 px-3 py-3 rounded-lg text-base font-medium min-h-[44px] hover:bg-stone-100 transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Dashboard
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Clients
+              </Link>
+              <Link
+                to="/chat"
+                className="flex items-center gap-3 text-stone-600 hover:text-stone-900 px-3 py-3 rounded-lg text-base font-medium min-h-[44px] hover:bg-stone-100 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Chat
               </Link>
             </nav>
           )}
+          
+          {/* Page Title - below nav on mobile for better spacing */}
+          <div className="mt-4 sm:hidden">
+            <h1 className="text-xl font-bold text-stone-800">
+              {filteredClientName ? `${filteredClientName}` : 'Invoice History'}
+            </h1>
+            {filteredClientName && (
+              <button
+                onClick={clearFilters}
+                className="text-sm text-teal-600 hover:text-teal-800 mt-1"
+              >
+                ← View all invoices
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -322,13 +345,13 @@ export default function History() {
           <div className={`${showFilters ? 'block' : 'hidden'} sm:block mt-4 sm:mt-0`}>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-stone-700 mb-1">
                   Client
                 </label>
                 <select
                   value={clientFilter}
                   onChange={(e) => setClientFilter(e.target.value)}
-                  className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                  className="w-full px-3 py-3 sm:py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 min-h-[44px]"
                 >
                   <option value="">All Clients</option>
                   {clients.map((client) => (
@@ -339,13 +362,13 @@ export default function History() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-stone-700 mb-1">
                   Status
                 </label>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                  className="w-full px-3 py-3 sm:py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 min-h-[44px]"
                 >
                   <option value="">All Statuses</option>
                   <option value="draft">Draft</option>
@@ -355,25 +378,25 @@ export default function History() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-stone-700 mb-1">
                   Start Date
                 </label>
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                  className="w-full px-3 py-3 sm:py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 min-h-[44px]"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-stone-700 mb-1">
                   End Date
                 </label>
                 <input
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-3 py-3 sm:py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[44px]"
+                  className="w-full px-3 py-3 sm:py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 min-h-[44px]"
                 />
               </div>
             </div>
@@ -393,7 +416,7 @@ export default function History() {
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="text-sm text-primary-600 hover:text-primary-800 min-h-[44px] px-2"
+                  className="text-sm text-teal-600 hover:text-teal-800 min-h-[44px] px-2"
                 >
                   Clear all filters
                 </button>
@@ -443,7 +466,7 @@ export default function History() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <Link
                         to={`/invoices/${invoice.id}`}
-                        className="text-primary-600 hover:text-primary-800 font-medium"
+                        className="text-teal-600 hover:text-teal-800 font-medium"
                       >
                         {invoice.invoice_number}
                       </Link>
@@ -501,7 +524,7 @@ export default function History() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => navigate(`/invoices/${invoice.id}`)}
-                        className="text-primary-600 hover:text-primary-800 mr-3"
+                        className="text-teal-600 hover:text-teal-800 mr-3"
                       >
                         View
                       </button>
@@ -616,7 +639,7 @@ export default function History() {
                 <div className="grid grid-cols-5 gap-2 pt-3 border-t border-stone-100">
                   <button
                     onClick={() => navigate(`/invoices/${invoice.id}`)}
-                    className="flex flex-col items-center py-2 text-primary-600 hover:bg-primary-50 rounded min-h-[44px]"
+                    className="flex flex-col items-center py-2 text-teal-600 hover:bg-teal-50 rounded min-h-[44px]"
                   >
                     <svg className="h-5 w-5 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

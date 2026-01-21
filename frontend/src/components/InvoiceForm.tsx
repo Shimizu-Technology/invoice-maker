@@ -195,8 +195,8 @@ export default function InvoiceForm() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      <h2 className="text-lg font-semibold text-gray-800 mb-6">Create Invoice</h2>
+    <div className="bg-white rounded-xl border border-stone-200 shadow-sm p-4 sm:p-6">
+      <h2 className="text-lg font-semibold text-stone-800 mb-6">Create Invoice</h2>
 
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
@@ -213,14 +213,14 @@ export default function InvoiceForm() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Client Selection */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-stone-700 mb-1">
             Client
           </label>
           <select
             value={selectedClientId}
             onChange={(e) => setSelectedClientId(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-3 sm:py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 min-h-[44px]"
           >
             <option value="">Select a client</option>
             {clients.map((client) => (
@@ -234,7 +234,7 @@ export default function InvoiceForm() {
         {/* Invoice Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-stone-700 mb-1">
               Invoice Number
             </label>
             <input
@@ -242,12 +242,12 @@ export default function InvoiceForm() {
               value={invoiceNumber}
               onChange={(e) => setInvoiceNumber(e.target.value)}
               required
-              placeholder={`INV-${new Date().getFullYear()}-001`}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="INV-2026-001"
+              className="w-full px-3 py-3 sm:py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 min-h-[44px]"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-stone-700 mb-1">
               Invoice Date
             </label>
             <input
@@ -255,7 +255,7 @@ export default function InvoiceForm() {
               value={invoiceDate}
               onChange={(e) => setInvoiceDate(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-3 sm:py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 min-h-[44px]"
             />
           </div>
         </div>
@@ -263,25 +263,25 @@ export default function InvoiceForm() {
         {/* Service Period */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-stone-700 mb-1">
               Service Period Start
             </label>
             <input
               type="date"
               value={periodStart}
               onChange={(e) => setPeriodStart(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-3 sm:py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 min-h-[44px]"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-stone-700 mb-1">
               Service Period End
             </label>
             <input
               type="date"
               value={periodEnd}
               onChange={(e) => setPeriodEnd(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-3 sm:py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 min-h-[44px]"
             />
           </div>
         </div>
@@ -289,7 +289,7 @@ export default function InvoiceForm() {
         {/* Hours Entries (for hourly invoices) */}
         {templateType === 'hourly' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
               Hours Entries
             </label>
             <div className="space-y-3">
@@ -335,7 +335,7 @@ export default function InvoiceForm() {
               <button
                 type="button"
                 onClick={addHoursEntry}
-                className="text-sm text-primary-600 hover:text-primary-800 min-h-[44px] px-2"
+                className="text-sm text-teal-600 hover:text-teal-800 min-h-[44px] px-2 font-medium"
               >
                 + Add Entry
               </button>
@@ -346,7 +346,7 @@ export default function InvoiceForm() {
         {/* Line Items (for project/tuition invoices) */}
         {(templateType === 'project' || templateType === 'tuition') && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-stone-700 mb-2">
               Line Items
             </label>
             <div className="space-y-3">
@@ -395,7 +395,7 @@ export default function InvoiceForm() {
               <button
                 type="button"
                 onClick={addLineItem}
-                className="text-sm text-primary-600 hover:text-primary-800 min-h-[44px] px-2"
+                className="text-sm text-teal-600 hover:text-teal-800 min-h-[44px] px-2 font-medium"
               >
                 + Add Item
               </button>
@@ -405,7 +405,7 @@ export default function InvoiceForm() {
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-stone-700 mb-1">
             Notes
           </label>
           <textarea
@@ -413,15 +413,15 @@ export default function InvoiceForm() {
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             placeholder="Optional notes for the invoice..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full px-3 py-3 sm:py-2.5 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
           />
         </div>
 
         {/* Total */}
-        <div className="p-4 bg-gray-50 rounded-lg">
+        <div className="p-4 bg-stone-50 rounded-lg">
           <div className="text-right">
-            <span className="text-gray-600">Total: </span>
-            <span className="text-2xl font-bold text-gray-800">
+            <span className="text-stone-600">Total: </span>
+            <span className="text-2xl font-bold text-teal-700">
               {formatCurrency(calculateTotal())}
             </span>
           </div>
@@ -432,7 +432,7 @@ export default function InvoiceForm() {
           <button
             type="submit"
             disabled={isSubmitting || !selectedClientId || !invoiceNumber}
-            className="w-full sm:w-auto px-6 py-3 sm:py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+            className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:bg-stone-400 disabled:cursor-not-allowed transition-colors min-h-[44px] font-medium"
           >
             {isSubmitting ? 'Creating...' : 'Create Invoice'}
           </button>

@@ -37,6 +37,7 @@ export default function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -162,7 +163,8 @@ export default function Clients() {
               </span>
             </Link>
             
-            <nav className="flex items-center gap-2">
+            {/* Desktop Navigation */}
+            <nav className="hidden sm:flex items-center gap-2">
               <Link
                 to="/clients"
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-100 text-teal-700 text-sm font-medium"
@@ -182,7 +184,48 @@ export default function Clients() {
                 History
               </Link>
             </nav>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="sm:hidden p-2 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors"
+              aria-label="Toggle menu"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
+
+          {/* Mobile Navigation Menu */}
+          {mobileMenuOpen && (
+            <nav className="sm:hidden mt-3 pb-1 pt-3 border-t border-stone-200 animate-fadeIn space-y-1">
+              <Link
+                to="/chat"
+                className="flex items-center gap-3 text-stone-600 hover:text-stone-900 px-3 py-3 rounded-lg text-base font-medium min-h-[44px] hover:bg-stone-100 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                Chat
+              </Link>
+              <Link
+                to="/history"
+                className="flex items-center gap-3 text-stone-600 hover:text-stone-900 px-3 py-3 rounded-lg text-base font-medium min-h-[44px] hover:bg-stone-100 transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Invoice History
+              </Link>
+            </nav>
+          )}
         </div>
       </header>
 

@@ -83,20 +83,20 @@ export default function InvoiceDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-teal-50/30 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
       </div>
     );
   }
 
   if (error || !invoice) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-teal-50/30 flex items-center justify-center p-4">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error || 'Invoice not found'}</p>
           <button
             onClick={() => navigate('/history')}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg min-h-[44px]"
+            className="px-4 py-2.5 bg-teal-600 text-white rounded-lg min-h-[44px] font-medium hover:bg-teal-700 transition-colors"
           >
             Back to History
           </button>
@@ -106,15 +106,15 @@ export default function InvoiceDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-stone-100 to-teal-50/30">
+      {/* Header - Glassmorphism style */}
+      <header className="sticky top-0 z-50 glass border-b border-stone-200/50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
               <button
                 onClick={() => navigate(-1)}
-                className="text-gray-600 hover:text-gray-900 min-w-[44px] min-h-[44px] flex items-center justify-center flex-shrink-0"
+                className="text-stone-600 hover:text-stone-900 min-w-[44px] min-h-[44px] flex items-center justify-center flex-shrink-0 rounded-lg hover:bg-stone-100 transition-colors"
                 aria-label="Go back"
               >
                 <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -122,12 +122,12 @@ export default function InvoiceDetail() {
                 </svg>
               </button>
               <div className="min-w-0 flex-1">
-                <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
+                <h1 className="text-lg sm:text-2xl font-bold text-stone-800 truncate">
                   {invoice.invoice_number}
                 </h1>
               </div>
               <span
-                className={`hidden sm:inline-flex px-2 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${getStatusBadgeClass(
+                className={`hidden sm:inline-flex px-2.5 py-1 text-xs font-semibold rounded-full flex-shrink-0 ${getStatusBadgeClass(
                   invoice.status
                 )}`}
               >
@@ -138,7 +138,7 @@ export default function InvoiceDetail() {
             {/* Desktop Download Button */}
             <button
               onClick={handleDownloadPdf}
-              className="hidden sm:flex px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors items-center min-h-[44px]"
+              className="hidden sm:flex px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors items-center min-h-[44px] font-medium shadow-sm"
             >
               <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -149,32 +149,22 @@ export default function InvoiceDetail() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="sm:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="sm:hidden p-2 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100 min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors"
               aria-label="Toggle menu"
             >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                />
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
               </svg>
             </button>
           </div>
 
           {/* Mobile Actions Menu */}
           {mobileMenuOpen && (
-            <div className="sm:hidden mt-4 pb-2 border-t border-gray-200 pt-4 space-y-2">
+            <div className="sm:hidden mt-3 pb-2 pt-3 border-t border-stone-200 space-y-3 animate-fadeIn">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Status:</span>
+                <span className="text-sm text-stone-600">Status:</span>
                 <span
-                  className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(
+                  className={`inline-flex px-2.5 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(
                     invoice.status
                   )}`}
                 >
@@ -183,7 +173,7 @@ export default function InvoiceDetail() {
               </div>
               <button
                 onClick={handleDownloadPdf}
-                className="w-full flex items-center justify-center px-4 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors min-h-[44px]"
+                className="w-full flex items-center justify-center px-4 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors min-h-[44px] font-medium"
               >
                 <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -197,7 +187,7 @@ export default function InvoiceDetail() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden">
           {/* Invoice Header */}
           <div className="p-4 sm:p-6 border-b border-gray-200">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -411,10 +401,10 @@ export default function InvoiceDetail() {
         </div>
 
         {/* Mobile Floating Download Button */}
-        <div className="sm:hidden fixed bottom-4 left-4 right-4">
+        <div className="sm:hidden fixed bottom-4 left-4 right-4 z-40">
           <button
             onClick={handleDownloadPdf}
-            className="w-full flex items-center justify-center px-4 py-3 bg-primary-600 text-white rounded-lg shadow-lg hover:bg-primary-700 transition-colors min-h-[48px]"
+            className="w-full flex items-center justify-center px-4 py-3 bg-teal-600 text-white rounded-xl shadow-lg hover:bg-teal-700 transition-colors min-h-[48px] font-medium"
           >
             <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
