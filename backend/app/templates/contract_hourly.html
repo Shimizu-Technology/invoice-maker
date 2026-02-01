@@ -87,7 +87,7 @@
     {# Check if any entries have ticket or description #}
     {% set has_task_info = hours_entries | selectattr('ticket', 'defined') | selectattr('ticket') | list | length > 0 or hours_entries | selectattr('description', 'defined') | selectattr('description') | list | length > 0 %}
     
-    <h3 style="margin-bottom: 8px; color: #333; font-size: 11pt;">Hours Breakdown</h3>
+    <h3 style="margin-bottom: 5px; color: #333; font-size: 9pt;">Hours Breakdown</h3>
     <table class="hours-table{% if has_task_info %} has-task{% endif %}">
         <thead>
             <tr>

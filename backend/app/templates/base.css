@@ -2,7 +2,7 @@
 
 @page {
     size: letter;
-    margin: 0.5in 0.6in;  /* Reduced margins for more content space */
+    margin: 0.4in 0.5in;  /* Tighter margins to fit more content */
 }
 
 * {
@@ -22,8 +22,8 @@ body {
 .invoice-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 18px;
-    padding-bottom: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
     border-bottom: 2px solid #333;
 }
 
@@ -74,7 +74,7 @@ body {
 
 /* Bill To section */
 .bill-to {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .bill-to-label {
@@ -100,8 +100,8 @@ body {
 .invoice-meta {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 15px;
-    padding: 10px 15px;
+    margin-bottom: 10px;
+    padding: 8px 12px;
     background-color: #f8f8f8;
     border-radius: 4px;
 }
@@ -127,7 +127,7 @@ body {
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 th {
@@ -135,15 +135,15 @@ th {
     color: #fff;
     font-weight: bold;
     text-align: left;
-    padding: 6px 8px;
-    font-size: 8pt;
+    padding: 4px 6px;
+    font-size: 7pt;
     text-transform: uppercase;
 }
 
 td {
-    padding: 5px 8px;
+    padding: 3px 6px;
     border-bottom: 1px solid #ddd;
-    font-size: 9pt;
+    font-size: 8pt;
 }
 
 tr:nth-child(even) {
@@ -189,32 +189,32 @@ tr:nth-child(even) {
 
 /* Notes section */
 .notes {
-    margin-top: 15px;
-    padding: 10px 12px;
+    margin-top: 10px;
+    padding: 8px 10px;
     background-color: #f8f8f8;
     border-radius: 4px;
 }
 
 .notes-label {
-    font-size: 8pt;
+    font-size: 7pt;
     font-weight: bold;
     color: #666;
     text-transform: uppercase;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .notes-content {
-    font-size: 9pt;
+    font-size: 8pt;
     color: #333;
 }
 
 /* Footer */
 .invoice-footer {
-    margin-top: 20px;
-    padding-top: 12px;
+    margin-top: 12px;
+    padding-top: 8px;
     border-top: 1px solid #ddd;
     text-align: center;
-    font-size: 8pt;
+    font-size: 7pt;
     color: #666;
 }
 
