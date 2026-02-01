@@ -1,7 +1,7 @@
 """Add ticket and description to hours_entries
 
-Revision ID: 008
-Revises: 007_add_archive_and_next_invoice_number
+Revision ID: 008_ticket_and_description
+Revises: 007_archive_and_numbering
 Create Date: 2026-01-21
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '008_add_ticket_and_description'
-down_revision: Union[str, None] = '007_add_archive_and_next_invoice_number'
+revision: str = '008_ticket_and_description'
+down_revision: Union[str, None] = '007_archive_and_numbering'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
