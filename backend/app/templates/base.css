@@ -255,24 +255,57 @@ tr:nth-child(even) {
 }
 
 /* Hours breakdown table specific */
-.hours-table th:first-child,
-.hours-table td:first-child {
-    width: 120px;
+
+/* When Task column is present (5 columns: Date, Task, Hours, Rate, Amount) */
+.hours-table.has-task th:first-child,
+.hours-table.has-task td:first-child {
+    width: 75px;  /* Date - compact */
+    white-space: nowrap;
 }
 
-.hours-table th:nth-child(2),
-.hours-table td:nth-child(2) {
-    width: 100px;
+.hours-table.has-task th:nth-child(2),
+.hours-table.has-task td:nth-child(2) {
+    /* Task column - flexible, takes remaining space */
+    text-align: left;
+}
+
+.hours-table.has-task th:nth-child(3),
+.hours-table.has-task td:nth-child(3) {
+    width: 55px;  /* Hours - compact */
     text-align: center;
 }
 
-.hours-table th:nth-child(3),
-.hours-table td:nth-child(3) {
-    width: 100px;
+.hours-table.has-task th:nth-child(4),
+.hours-table.has-task td:nth-child(4) {
+    width: 60px;  /* Rate - compact */
     text-align: right;
 }
 
-.hours-table th:last-child,
-.hours-table td:last-child {
+.hours-table.has-task th:last-child,
+.hours-table.has-task td:last-child {
+    width: 70px;  /* Amount */
     text-align: right;
+}
+
+/* When Task column is NOT present (4 columns: Date, Hours, Rate, Amount) */
+.hours-table:not(.has-task) th:first-child,
+.hours-table:not(.has-task) td:first-child {
+    width: 120px;  /* Date */
+}
+
+.hours-table:not(.has-task) th:nth-child(2),
+.hours-table:not(.has-task) td:nth-child(2) {
+    width: 100px;
+    text-align: center;  /* Hours */
+}
+
+.hours-table:not(.has-task) th:nth-child(3),
+.hours-table:not(.has-task) td:nth-child(3) {
+    width: 100px;
+    text-align: right;  /* Rate */
+}
+
+.hours-table:not(.has-task) th:last-child,
+.hours-table:not(.has-task) td:last-child {
+    text-align: right;  /* Amount */
 }
