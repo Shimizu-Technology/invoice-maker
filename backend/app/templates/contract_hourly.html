@@ -84,11 +84,17 @@
 
     <!-- Hours Breakdown -->
     {% if hours_entries %}
+    {# Check if any entries have ticket or description #}
+    {% set has_task_info = hours_entries | selectattr('ticket', 'defined') | selectattr('ticket') | list | length > 0 or hours_entries | selectattr('description', 'defined') | selectattr('description') | list | length > 0 %}
+    
     <h3 style="margin-bottom: 8px; color: #333; font-size: 11pt;">Hours Breakdown</h3>
     <table class="hours-table">
         <thead>
             <tr>
                 <th>Date</th>
+                {% if has_task_info %}
+                <th>Task</th>
+                {% endif %}
                 <th class="text-center">Hours</th>
                 <th class="text-right">Rate</th>
                 <th class="text-right">Amount</th>
@@ -97,7 +103,19 @@
         <tbody>
             {% for entry in hours_entries %}
             <tr>
-                <td>{{ entry.date.strftime('%a, %b %d') }}</td>
+                <td>{{ entry.date.strftime('%a, %b %d') if entry.date.strftime is defined else entry.date }}</td>
+                {% if has_task_info %}
+                <td>
+                    {# Display ticket: description, or just description, or just ticket #}
+                    {% if entry.ticket and entry.description %}
+                        {{ entry.ticket }}: {{ entry.description }}
+                    {% elif entry.description %}
+                        {{ entry.description }}
+                    {% elif entry.ticket %}
+                        {{ entry.ticket }}
+                    {% endif %}
+                </td>
+                {% endif %}
                 <td class="text-center">{{ "%.2f"|format(entry.hours) }}</td>
                 <td class="text-right">${{ "%.2f"|format(entry.rate) }}</td>
                 <td class="text-right">${{ "%.2f"|format(entry.hours * entry.rate) }}</td>

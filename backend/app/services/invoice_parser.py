@@ -265,12 +265,18 @@ class InvoiceParser:
                 rate = Decimal(str(entry.get("rate", client.default_rate)))
                 amount = hours * rate
                 total_amount += amount
-                hours_entries.append({
+                entry_data = {
                     "date": entry_date.isoformat(),
                     "hours": float(hours),
                     "rate": float(rate),
                     "amount": float(amount),
-                })
+                }
+                # Include optional ticket and description if provided
+                if entry.get("ticket"):
+                    entry_data["ticket"] = entry["ticket"]
+                if entry.get("description"):
+                    entry_data["description"] = entry["description"]
+                hours_entries.append(entry_data)
         else:
             for item in invoice_data.get("line_items", []):
                 quantity = Decimal(str(item.get("quantity", 1)))
@@ -347,6 +353,8 @@ class InvoiceParser:
                 date=self._parse_date(entry["date"]) or date.today(),
                 hours=Decimal(str(entry["hours"])),
                 rate=Decimal(str(entry["rate"])),
+                ticket=entry.get("ticket"),  # Optional ticket/task ID
+                description=entry.get("description"),  # Optional work description
             )
             db.add(db_entry)
 

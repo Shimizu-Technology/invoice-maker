@@ -185,7 +185,7 @@ Always respond with valid JSON in one of these formats:
         "service_period_end": "YYYY-MM-DD",
         "personal_name": "Optional - your name above company name",
         "hours_entries": [
-            {{"date": "YYYY-MM-DD", "hours": 8.0, "rate": 100.00}}
+            {{"date": "YYYY-MM-DD", "hours": 8.0, "rate": 100.00, "ticket": "OPTIONAL-TICKET-123", "description": "Optional work description"}}
         ],
         "line_items": [
             {{"description": "Item description", "quantity": 1, "rate": 100.00}}
@@ -193,6 +193,23 @@ Always respond with valid JSON in one of these formats:
         "notes": "Optional notes"
     }}
 }}
+
+HOURS ENTRY FIELDS:
+- "date": Required - the date of work (YYYY-MM-DD)
+- "hours": Required - number of hours worked
+- "rate": Required - hourly rate
+- "ticket": Optional - ticket/task ID (e.g., "SPEC-123", "Support", "Bug Fix")
+- "description": Optional - description of work done (e.g., "Fixed login bug", "Rails Update")
+
+TICKET AND DESCRIPTION EXTRACTION:
+When extracting from screenshots or text:
+- Look for ticket numbers in various formats: SPEC-123, PROJ-456, #123, Ticket-789, or just plain numbers like 2254, 2241
+- Common pattern: "2254 - Description of work" means ticket=2254, description="Description of work"
+- Look for task descriptions next to dates or hours
+- If you see "TICKET - Description" or "TICKET: Description" format, split into separate ticket and description fields
+- If there's only a description with no ticket number, just set the description field
+- Common description column headers: "Task", "Description", "Work Done", "Notes", "Activity"
+- If the user's spreadsheet has a column combining ticket + description (like "2254 - Fixed bug"), parse both parts
 
 2. If you need clarification:
 {{

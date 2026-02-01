@@ -21,6 +21,10 @@ class HoursEntryBase(BaseModel):
     date: date_type
     hours: Decimal = Field(..., ge=0)  # Allow 0 hours for days with no work
     rate: Decimal = Field(..., ge=0)
+    # Optional ticket/task identifier (e.g., "SPEC-123", "Support")
+    ticket: Optional[str] = Field(None, max_length=100)
+    # Optional description of work done (e.g., "Fixed login bug on mobile app")
+    description: Optional[str] = None
 
 
 class HoursEntryCreate(HoursEntryBase):

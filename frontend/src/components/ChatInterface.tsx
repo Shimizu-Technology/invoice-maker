@@ -1062,14 +1062,25 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                     {message.invoicePreview.hours_entries.length > 0 && (
                         <div className="mt-3 pt-3 border-t border-stone-100">
                           <p className="text-stone-500 font-medium mb-1">Hours:</p>
-                          <div className="space-y-1 text-xs">
+                          <div className="space-y-1.5 text-xs">
                             {(expandedPreviews.has(index) 
                               ? message.invoicePreview.hours_entries 
                               : message.invoicePreview.hours_entries.slice(0, 5)
                             ).map((entry, i) => (
-                              <div key={i} className="flex justify-between">
-                                <span>{entry.date}: {entry.hours}h @ ${entry.rate}/hr</span>
-                                <span className="font-medium">{formatCurrency(entry.amount)}</span>
+                              <div key={i} className="flex justify-between items-start gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-stone-600">{entry.date}</span>
+                                  {/* Show ticket/description if available */}
+                                  {(entry.ticket || entry.description) && (
+                                    <div className="text-stone-500 truncate" title={entry.ticket && entry.description ? `${entry.ticket}: ${entry.description}` : (entry.description || entry.ticket)}>
+                                      {entry.ticket && entry.description 
+                                        ? `${entry.ticket}: ${entry.description}`
+                                        : (entry.description || entry.ticket)}
+                                    </div>
+                                  )}
+                                  <span className="text-stone-400"> {entry.hours}h @ ${entry.rate}/hr</span>
+                                </div>
+                                <span className="font-medium whitespace-nowrap">{formatCurrency(entry.amount)}</span>
                               </div>
                             ))}
                             {message.invoicePreview.hours_entries.length > 5 && (

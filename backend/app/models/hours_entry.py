@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime, date, timezone
 from decimal import Decimal
-from sqlalchemy import String, DateTime, Date, Numeric, ForeignKey
+from sqlalchemy import String, Text, DateTime, Date, Numeric, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ..database import Base
 
@@ -22,6 +22,11 @@ class HoursEntry(Base):
     date: Mapped[date] = mapped_column(Date, nullable=False)
     hours: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
     rate: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False)
+    
+    # Optional ticket/task identifier (e.g., "SPEC-123", "Support")
+    ticket: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # Optional description of work done (e.g., "Fixed login bug on mobile app")
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=lambda: datetime.now(timezone.utc), nullable=False

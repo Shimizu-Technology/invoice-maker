@@ -27,6 +27,8 @@ export interface HoursEntry {
   date: string;
   hours: string;
   rate: string;
+  ticket?: string | null;  // Optional ticket/task ID (e.g., "SPEC-123")
+  description?: string | null;  // Optional work description
   created_at: string;
 }
 
@@ -71,6 +73,8 @@ export interface InvoicePreview {
     hours: number;
     rate: number;
     amount: number;
+    ticket?: string;  // Optional ticket/task ID (e.g., "SPEC-123")
+    description?: string;  // Optional work description
   }>;
   line_items: Array<{
     description: string;
