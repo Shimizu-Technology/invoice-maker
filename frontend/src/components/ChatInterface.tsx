@@ -93,6 +93,49 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
     }
   }, [sessionIdFromUrl]);
 
+  const getErrorMessage = (error: unknown, fallback: string) => {
+    return error instanceof Error ? error.message : fallback;
+  };
+
+  const isRetryableRequestError = (error: unknown) => {
+    if (!(error instanceof Error)) return false;
+
+    const retryableError = error as Error & {
+      code?: string;
+      response?: unknown;
+    };
+
+    return !retryableError.response && (
+      retryableError.code === 'ERR_NETWORK' ||
+      retryableError.message === 'Network Error' ||
+      retryableError.message.toLowerCase().includes('network')
+    );
+  };
+
+  const buildRetryableErrorMessage = (
+    error: unknown,
+    retryAction: ChatMessage['retryAction'] | undefined,
+    fallback: string
+  ): ChatMessage => {
+    if (retryAction && isRetryableRequestError(error)) {
+      return {
+        role: 'assistant',
+        content:
+          retryAction.type === 'retry_confirm_invoice'
+            ? 'I lost the connection while generating the PDF. Please retry PDF generation. If it keeps happening, wait a moment and try again.'
+            : 'I could not reach the server, so that message may not have gone through. Please retry it or send the message again.',
+        timestamp: new Date(),
+        retryAction,
+      };
+    }
+
+    return {
+      role: 'assistant',
+      content: `Error: ${getErrorMessage(error, fallback)}`,
+      timestamp: new Date(),
+    };
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -279,45 +322,48 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent, messageOverride?: string) => {
-    e?.preventDefault?.();
-    const userMessage = (messageOverride || input).trim();
-    if (!userMessage || isLoading) return;
+  const submitMessage = async ({
+    userMessage,
+    addUserMessage = true,
+    imagesToUpload = [],
+    initialImageRefs = [],
+    initialImageUrls = [],
+    ignoreLoadingLock = false,
+  }: {
+    userMessage: string;
+    addUserMessage?: boolean;
+    imagesToUpload?: Array<{ file: File; preview: string }>;
+    initialImageRefs?: string[];
+    initialImageUrls?: string[];
+    ignoreLoadingLock?: boolean;
+  }) => {
+    if (!userMessage || (isLoading && !ignoreLoadingLock)) return;
 
-    // Handle multiple image uploads
-    let imageUrls: string[] = [];
-    let imageRefs: string[] = [];
-    const imagesToUpload = [...pendingImages];
-    
-    if (!messageOverride) {
-    setInput('');
-      // Reset textarea height
-      if (inputRef.current) {
-        inputRef.current.style.height = 'auto';
-      }
-      
-      // Add user message with image previews
-    setMessages((prev) => [
-      ...prev,
-        { 
-          role: 'user', 
-          content: userMessage, 
+    let imageUrls = [...initialImageUrls];
+    let imageRefs = [...initialImageRefs];
+
+    if (addUserMessage) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'user',
+          content: userMessage,
           timestamp: new Date(),
-          imageUrls: imagesToUpload.map(img => img.preview), // Show local previews immediately
+          imageUrls: imageUrls.length > 0 ? imageUrls : imagesToUpload.map((img) => img.preview),
         },
       ]);
-      
-      // Clear pending images after adding to message
+
       if (imagesToUpload.length > 0) {
         setPendingImages([]);
       }
     }
+
     setIsLoading(true);
     setPendingClientCreation(null); // Clear any pending client creation
 
     try {
       // Upload images to S3 if present
-      if (imagesToUpload.length > 0) {
+      if (imagesToUpload.length > 0 && imageRefs.length === 0) {
         setIsUploadingImage(true);
         try {
           // Upload all images in parallel
@@ -327,13 +373,15 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
           imageRefs = uploadResults.map(result => result.asset_ref);
           
           // Update the message with the S3 URLs instead of local previews
-          setMessages((prev) => 
-            prev.map((msg, idx) => 
-              idx === prev.length - 1 && msg.role === 'user'
-                ? { ...msg, imageUrls }
-                : msg
-            )
-          );
+          if (addUserMessage) {
+            setMessages((prev) =>
+              prev.map((msg, idx) =>
+                idx === prev.length - 1 && msg.role === 'user'
+                  ? { ...msg, imageUrls }
+                  : msg
+              )
+            );
+          }
           imagesToUpload.forEach(img => URL.revokeObjectURL(img.preview));
         } catch (uploadError) {
           console.error('Failed to upload images:', uploadError);
@@ -416,15 +464,40 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
     } catch (error) {
       setMessages((prev) => [
         ...prev,
-        {
-          role: 'assistant',
-          content: `Error: ${error instanceof Error ? error.message : 'Something went wrong'}`,
-          timestamp: new Date(),
-        },
+        buildRetryableErrorMessage(
+          error,
+          {
+            type: 'resend_message',
+            label: 'Retry message',
+            message: userMessage,
+            imageRefs,
+            imageUrls,
+          },
+          'Something went wrong'
+        ),
       ]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e?.preventDefault?.();
+    const userMessage = input.trim();
+    if (!userMessage || isLoading) return;
+
+    const imagesToUpload = [...pendingImages];
+    setInput('');
+
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+    }
+
+    await submitMessage({
+      userMessage,
+      addUserMessage: true,
+      imagesToUpload,
+    });
   };
 
   const handleCreateClient = async () => {
@@ -462,49 +535,13 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       setPendingClientCreation(null);
 
       // Auto-retry the original invoice request (with images if present)
-      setMessages((prev) => [
-        ...prev,
-        { 
-          role: 'user', 
-          content: originalMessage, 
-          timestamp: new Date(),
-          imageUrls: originalImageUrls,  // Include original images
-        },
-      ]);
-      
-      // Send the original message again WITH images
-      const retryResponse = await chatApi.send(
-        originalMessage, 
-        currentSessionId,
-        originalImageRefs
-      );
-      
-      const assistantMessage: ChatMessage = {
-        role: 'assistant',
-        content: retryResponse.message,
-        timestamp: new Date(),
-      };
-
-      if (retryResponse.status === 'preview' && retryResponse.invoice_preview) {
-        // Increment version for new preview
-        const newVersion = previewVersion + 1;
-        setPreviewVersion(newVersion);
-        
-        const versionedPreview = { ...retryResponse.invoice_preview, version: newVersion };
-        assistantMessage.invoicePreview = versionedPreview;
-        setCurrentPreview(versionedPreview);
-        
-        // Add to preview history for dropdown selection
-        setPreviewHistory(prev => [...prev, { version: newVersion, preview: versionedPreview }]);
-        
-        // Clear any previously created invoice
-        if (createdInvoice) {
-          setCreatedInvoice(null);
-          setDismissedInvoice(null);
-        }
-      }
-
-      setMessages((prev) => [...prev, assistantMessage]);
+      await submitMessage({
+        userMessage: originalMessage,
+        addUserMessage: true,
+        initialImageRefs: originalImageRefs || [],
+        initialImageUrls: originalImageUrls || [],
+        ignoreLoadingLock: true,
+      });
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -519,15 +556,16 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
     }
   };
 
-  const handleConfirmInvoice = async () => {
+  const handleConfirmInvoice = async (addUserMessage = true) => {
     if (!currentSessionId || !currentPreview || isLoading) return;
 
     setIsLoading(true);
-    // Add user message showing they confirmed
-    setMessages((prev) => [
-      ...prev,
-      { role: 'user', content: 'Generate PDF', timestamp: new Date() },
-    ]);
+    if (addUserMessage) {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'user', content: 'Generate PDF', timestamp: new Date() },
+      ]);
+    }
 
     try {
       const response = await chatApi.confirm(currentSessionId);
@@ -563,15 +601,43 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
     } catch (error) {
       setMessages((prev) => [
         ...prev,
-        {
-          role: 'assistant',
-          content: `Error: ${error instanceof Error ? error.message : 'Failed to generate PDF'}`,
-          timestamp: new Date(),
-        },
+        buildRetryableErrorMessage(
+          error,
+          {
+            type: 'retry_confirm_invoice',
+            label: 'Retry PDF generation',
+          },
+          'Failed to generate PDF'
+        ),
       ]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRetryAction = async (
+    messageIndex: number,
+    retryAction: NonNullable<ChatMessage['retryAction']>
+  ) => {
+    setMessages((prev) =>
+      prev.map((message, index) =>
+        index === messageIndex ? { ...message, retryAction: undefined } : message
+      )
+    );
+
+    if (retryAction.type === 'retry_confirm_invoice') {
+      await handleConfirmInvoice(false);
+      return;
+    }
+
+    if (!retryAction.message) return;
+
+    await submitMessage({
+      userMessage: retryAction.message,
+      addUserMessage: false,
+      initialImageRefs: retryAction.imageRefs || [],
+      initialImageUrls: retryAction.imageUrls || [],
+    });
   };
 
   const handleDownloadPdf = () => {
@@ -1037,7 +1103,9 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                   className={`rounded-2xl px-4 py-3 ${
                 message.role === 'user'
                       ? 'bg-gradient-to-br from-teal-600 to-teal-700 text-white rounded-br-md'
-                      : 'bg-stone-100 text-stone-800 rounded-bl-md'
+                      : message.retryAction
+                        ? 'bg-amber-50 text-amber-900 rounded-bl-md border border-amber-200'
+                        : 'bg-stone-100 text-stone-800 rounded-bl-md'
                   }`}
                 >
                   {/* Image attachments - support multiple images */}
@@ -1055,6 +1123,20 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                     </div>
                   )}
                   <p className="whitespace-pre-wrap text-[15px] leading-relaxed">{message.content}</p>
+                  {message.retryAction && (
+                    <div className="mt-3">
+                      <button
+                        onClick={() => void handleRetryAction(index, message.retryAction!)}
+                        disabled={isLoading}
+                        className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-medium text-amber-800 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h5M20 20v-5h-5M5.64 18.36A9 9 0 103.51 8H9" />
+                        </svg>
+                        {message.retryAction.label}
+                      </button>
+                    </div>
+                  )}
 
               {/* Invoice Preview */}
               {message.invoicePreview && (
@@ -1306,7 +1388,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                 )}
               </div>
               <button
-                onClick={handleConfirmInvoice}
+                onClick={() => void handleConfirmInvoice()}
                 disabled={isLoading}
                 className="px-5 py-2.5 bg-gradient-to-r from-teal-600 to-teal-700 text-white text-sm rounded-lg hover:from-teal-700 hover:to-teal-800 transition-all min-h-[44px] disabled:opacity-50 flex items-center justify-center gap-2 font-medium shadow-sm"
               >

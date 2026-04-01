@@ -102,6 +102,13 @@ export interface ChatMessage {
   previewJson?: string;  // Raw preview JSON (for version selection)
   imageUrl?: string;  // Single image (legacy/first image)
   imageUrls?: string[];  // Multiple images
+  retryAction?: {
+    type: 'resend_message' | 'retry_confirm_invoice';
+    label: string;
+    message?: string;
+    imageRefs?: string[];
+    imageUrls?: string[];
+  };
 }
 
 export type ChatResponseStatus =

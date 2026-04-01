@@ -49,7 +49,7 @@
         {% endif %}
         <div class="meta-item">
             <div class="meta-label">Total Due</div>
-            <div class="meta-value">${{ "%.2f"|format(invoice.total_amount) }}</div>
+            <div class="meta-value">${{ "{:,.2f}".format(invoice.total_amount) }}</div>
         </div>
     </div>
 
@@ -66,9 +66,9 @@
             {% for item in line_items %}
             <tr>
                 <td>{{ item.description }}</td>
-                <td class="text-center">{{ "%.2f"|format(item.quantity) if item.quantity != 1 else "1" }}</td>
-                <td class="text-right">${{ "%.2f"|format(item.rate) }}</td>
-                <td class="text-right">${{ "%.2f"|format(item.amount) }}</td>
+                <td class="text-center">{{ "{:,.2f}".format(item.quantity) if item.quantity != 1 else "1" }}</td>
+                <td class="text-right">${{ "{:,.2f}".format(item.rate) }}</td>
+                <td class="text-right">${{ "{:,.2f}".format(item.amount) }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -77,23 +77,23 @@
     <div class="summary">
         <div class="summary-row">
             <span class="summary-label">Subtotal</span>
-            <span class="summary-value">${{ "%.2f"|format(subtotal) }}</span>
+            <span class="summary-value">${{ "{:,.2f}".format(subtotal) }}</span>
         </div>
         {% if discount %}
         <div class="summary-row">
             <span class="summary-label">Discount</span>
-            <span class="summary-value">-${{ "%.2f"|format(discount) }}</span>
+            <span class="summary-value">-${{ "{:,.2f}".format(discount) }}</span>
         </div>
         {% endif %}
         {% if tax %}
         <div class="summary-row">
             <span class="summary-label">Tax</span>
-            <span class="summary-value">${{ "%.2f"|format(tax) }}</span>
+            <span class="summary-value">${{ "{:,.2f}".format(tax) }}</span>
         </div>
         {% endif %}
         <div class="summary-row total">
             <span class="summary-label">Total Due</span>
-            <span class="summary-value">${{ "%.2f"|format(invoice.total_amount) }}</span>
+            <span class="summary-value">${{ "{:,.2f}".format(invoice.total_amount) }}</span>
         </div>
     </div>
 
