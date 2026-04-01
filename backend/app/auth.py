@@ -191,6 +191,33 @@ def _claim_bootstrap_workspace_if_applicable(db: Session, email: str) -> Workspa
     return bootstrap_workspace
 
 
+def _link_existing_user_by_email(
+    db: Session,
+    *,
+    clerk_user_id: str,
+    email: str,
+    full_name: str | None,
+) -> User | None:
+    """Link a previously-created local user record to a real Clerk identity."""
+    existing_user = db.query(User).filter(User.email == email).first()
+    if not existing_user:
+        return None
+
+    # If a real Clerk identity is already attached to this email, keep using it.
+    if existing_user.clerk_user_id not in {clerk_user_id, "dev-user"}:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This email is already linked to another account",
+        )
+
+    existing_user.clerk_user_id = clerk_user_id
+    if full_name and existing_user.full_name != full_name:
+        existing_user.full_name = full_name
+    db.commit()
+    db.refresh(existing_user)
+    return existing_user
+
+
 @dataclass
 class AuthContext:
     """Container for the authenticated app user and workspace."""
@@ -256,6 +283,15 @@ def get_auth_context(
         return AuthContext(user=user, workspace=user.workspace)
 
     email, full_name = _fetch_clerk_user_details(clerk_user_id, claims)
+    existing_user = _link_existing_user_by_email(
+        db,
+        clerk_user_id=clerk_user_id,
+        email=email,
+        full_name=full_name,
+    )
+    if existing_user:
+        return AuthContext(user=existing_user, workspace=existing_user.workspace)
+
     workspace = _claim_bootstrap_workspace_if_applicable(db, email) or _provision_workspace_for_user(
         db, email, full_name
     )
