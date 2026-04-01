@@ -25,9 +25,13 @@ certifi==2026.1.4
     #   httpcore
     #   httpx
 cffi==2.0.0
-    # via weasyprint
+    # via
+    #   cryptography
+    #   weasyprint
 click==8.3.1
     # via uvicorn
+cryptography==46.0.6
+    # via pyjwt
 cssselect2==0.8.0
     # via weasyprint
 distro==1.9.0
@@ -45,7 +49,9 @@ httpcore==1.0.9
 httptools==0.7.1
     # via uvicorn
 httpx==0.28.1
-    # via openai
+    # via
+    #   invoice-maker-backend (pyproject.toml)
+    #   openai
 idna==3.11
     # via
     #   anyio
@@ -83,6 +89,8 @@ pydantic-settings==2.12.0
     # via invoice-maker-backend (pyproject.toml)
 pydyf==0.12.1
     # via weasyprint
+pyjwt==2.12.1
+    # via invoice-maker-backend (pyproject.toml)
 pyphen==0.17.2
     # via weasyprint
 python-dateutil==2.9.0.post0
