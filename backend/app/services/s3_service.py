@@ -42,9 +42,10 @@ class S3Service:
         file_content: bytes,
         content_type: str,
         original_filename: Optional[str] = None,
+        workspace_id: Optional[str] = None,
     ) -> str:
         """
-        Upload an image to S3 and return the public URL.
+        Upload an image to S3 and return the storage key.
 
         Args:
             file_content: The raw bytes of the image
@@ -52,13 +53,14 @@ class S3Service:
             original_filename: Original filename for reference
 
         Returns:
-            The public URL of the uploaded image
+            The storage key of the uploaded image
         """
         # Generate unique filename
         extension = self._get_extension(content_type, original_filename)
         timestamp = datetime.utcnow().strftime("%Y/%m/%d")
         unique_id = str(uuid.uuid4())[:8]
-        key = f"chat-images/{timestamp}/{unique_id}{extension}"
+        workspace_prefix = f"workspaces/{workspace_id}" if workspace_id else "workspaces/shared"
+        key = f"{workspace_prefix}/chat-images/{timestamp}/{unique_id}{extension}"
 
         try:
             # Upload to S3
@@ -67,14 +69,24 @@ class S3Service:
                 Key=key,
                 Body=file_content,
                 ContentType=content_type,
+                CacheControl="private, max-age=3600",
             )
 
-            # Generate the public URL
-            url = f"https://{self.bucket}.s3.{settings.aws_s3_region}.amazonaws.com/{key}"
-            return url
+            return key
 
         except ClientError as e:
             raise Exception(f"Failed to upload image to S3: {str(e)}")
+
+    def generate_presigned_url(self, storage_key: str, expires_in: int = 3600) -> str:
+        """Generate a temporary URL for a private object."""
+        try:
+            return self.client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": self.bucket, "Key": storage_key},
+                ExpiresIn=expires_in,
+            )
+        except ClientError as e:
+            raise Exception(f"Failed to create presigned URL: {str(e)}")
 
     def _get_extension(
         self, content_type: str, filename: Optional[str] = None

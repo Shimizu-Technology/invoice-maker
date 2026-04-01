@@ -8,11 +8,13 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
 
+from ..auth import get_current_workspace
 from ..database import get_db
 from ..models.invoice import Invoice, InvoiceStatus
 from ..models.hours_entry import HoursEntry
 from ..models.line_item import LineItem
 from ..models.client import Client
+from ..models.workspace import Workspace
 from ..schemas.invoice import (
     InvoiceCreate,
     InvoiceUpdate,
@@ -43,9 +45,10 @@ async def list_invoices(
     end_date: Optional[date] = Query(None, description="Filter by end date"),
     include_archived: bool = Query(False, description="Include archived invoices"),
     db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """List all invoices with optional filters."""
-    query = db.query(Invoice)
+    query = db.query(Invoice).filter(Invoice.workspace_id == workspace.id)
 
     if client_id:
         query = query.filter(Invoice.client_id == client_id)
@@ -65,10 +68,18 @@ async def list_invoices(
 
 
 @router.post("", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
-async def create_invoice(invoice: InvoiceCreate, db: Session = Depends(get_db)):
+async def create_invoice(
+    invoice: InvoiceCreate,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
+):
     """Create a new invoice with hours entries or line items."""
     # Verify client exists
-    client = db.query(Client).filter(Client.id == invoice.client_id).first()
+    client = (
+        db.query(Client)
+        .filter(Client.id == invoice.client_id, Client.workspace_id == workspace.id)
+        .first()
+    )
     if not client:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -77,7 +88,8 @@ async def create_invoice(invoice: InvoiceCreate, db: Session = Depends(get_db)):
 
     # Check if invoice number already exists
     existing = db.query(Invoice).filter(
-        Invoice.invoice_number == invoice.invoice_number
+        Invoice.workspace_id == workspace.id,
+        Invoice.invoice_number == invoice.invoice_number,
     ).first()
     if existing:
         raise HTTPException(
@@ -87,7 +99,7 @@ async def create_invoice(invoice: InvoiceCreate, db: Session = Depends(get_db)):
 
     # Create invoice
     invoice_data = invoice.model_dump(exclude={"hours_entries", "line_items"})
-    db_invoice = Invoice(**invoice_data)
+    db_invoice = Invoice(workspace_id=workspace.id, **invoice_data)
     db.add(db_invoice)
     db.flush()  # Get the ID
 
@@ -125,9 +137,17 @@ async def create_invoice(invoice: InvoiceCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/{invoice_id}", response_model=InvoiceResponse)
-async def get_invoice(invoice_id: str, db: Session = Depends(get_db)):
+async def get_invoice(
+    invoice_id: str,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
+):
     """Get a single invoice by ID with all details."""
-    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    invoice = (
+        db.query(Invoice)
+        .filter(Invoice.id == invoice_id, Invoice.workspace_id == workspace.id)
+        .first()
+    )
     if not invoice:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -140,7 +160,8 @@ async def get_invoice(invoice_id: str, db: Session = Depends(get_db)):
 async def get_invoice_pdf(
     invoice_id: str, 
     inline: bool = Query(False, description="If true, display inline instead of download"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """Generate and download/display invoice as PDF.
     
@@ -149,7 +170,11 @@ async def get_invoice_pdf(
                 If false (default), sets to attachment for download.
     """
     # Get invoice with relationships
-    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    invoice = (
+        db.query(Invoice)
+        .filter(Invoice.id == invoice_id, Invoice.workspace_id == workspace.id)
+        .first()
+    )
     if not invoice:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -157,7 +182,11 @@ async def get_invoice_pdf(
         )
 
     # Get client
-    client = db.query(Client).filter(Client.id == invoice.client_id).first()
+    client = (
+        db.query(Client)
+        .filter(Client.id == invoice.client_id, Client.workspace_id == workspace.id)
+        .first()
+    )
 
     # Determine template type from client
     template_type = client.template_type.value if client else "hourly"
@@ -191,6 +220,7 @@ async def get_invoice_pdf(
             hours_entries=list(invoice.hours_entries),
             line_items=list(invoice.line_items),
             template_type=template_type,
+            user=workspace.business_profile.to_company_info() if workspace.business_profile else None,
         )
 
         # Update invoice with PDF path
@@ -208,10 +238,17 @@ async def get_invoice_pdf(
 
 @router.put("/{invoice_id}", response_model=InvoiceResponse)
 async def update_invoice(
-    invoice_id: str, invoice_update: InvoiceUpdate, db: Session = Depends(get_db)
+    invoice_id: str,
+    invoice_update: InvoiceUpdate,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """Update an existing invoice."""
-    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    invoice = (
+        db.query(Invoice)
+        .filter(Invoice.id == invoice_id, Invoice.workspace_id == workspace.id)
+        .first()
+    )
     if not invoice:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -223,7 +260,9 @@ async def update_invoice(
     # Check if invoice number is being changed to an existing one
     if "invoice_number" in update_data and update_data["invoice_number"] != invoice.invoice_number:
         existing = db.query(Invoice).filter(
-            Invoice.invoice_number == update_data["invoice_number"]
+            Invoice.workspace_id == workspace.id,
+            Invoice.invoice_number == update_data["invoice_number"],
+            Invoice.id != invoice_id,
         ).first()
         if existing:
             raise HTTPException(
@@ -240,9 +279,17 @@ async def update_invoice(
 
 
 @router.delete("/{invoice_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_invoice(invoice_id: str, db: Session = Depends(get_db)):
+async def delete_invoice(
+    invoice_id: str,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
+):
     """Delete an invoice."""
-    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    invoice = (
+        db.query(Invoice)
+        .filter(Invoice.id == invoice_id, Invoice.workspace_id == workspace.id)
+        .first()
+    )
     if not invoice:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -255,9 +302,17 @@ async def delete_invoice(invoice_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{invoice_id}/archive")
-async def archive_invoice(invoice_id: str, db: Session = Depends(get_db)):
+async def archive_invoice(
+    invoice_id: str,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
+):
     """Archive an invoice (hides from default list)."""
-    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    invoice = (
+        db.query(Invoice)
+        .filter(Invoice.id == invoice_id, Invoice.workspace_id == workspace.id)
+        .first()
+    )
     if not invoice:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -269,9 +324,17 @@ async def archive_invoice(invoice_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/{invoice_id}/restore")
-async def restore_invoice(invoice_id: str, db: Session = Depends(get_db)):
+async def restore_invoice(
+    invoice_id: str,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
+):
     """Restore an archived invoice."""
-    invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
+    invoice = (
+        db.query(Invoice)
+        .filter(Invoice.id == invoice_id, Invoice.workspace_id == workspace.id)
+        .first()
+    )
     if not invoice:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

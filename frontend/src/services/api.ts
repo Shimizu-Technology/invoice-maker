@@ -15,6 +15,8 @@ import type {
   QuickInvoiceResponse,
   GenerateEmailResponse,
   QuickHoursEntry,
+  BusinessProfile,
+  MeResponse,
 } from '../types';
 
 // API base URL
@@ -26,6 +28,23 @@ const api: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+});
+
+let getAuthToken: (() => Promise<string | null>) | null = null;
+
+export const setAuthTokenGetter = (getter: (() => Promise<string | null>) | null) => {
+  getAuthToken = getter;
+};
+
+api.interceptors.request.use(async (config) => {
+  if (getAuthToken) {
+    const token = await getAuthToken();
+    if (token) {
+      config.headers = config.headers ?? {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
 });
 
 // Error handler
@@ -126,7 +145,7 @@ export const invoicesApi = {
     }
   },
 
-  create: async (data: Partial<Invoice>): Promise<Invoice> => {
+  create: async (data: object): Promise<Invoice> => {
     try {
       const response = await api.post('/api/invoices', data);
       return response.data;
@@ -152,8 +171,41 @@ export const invoicesApi = {
     }
   },
 
-  getPdfUrl: (id: string): string => {
-    return `${API_BASE_URL}/api/invoices/${id}/pdf`;
+  fetchPdfBlob: async (id: string, inline: boolean = false): Promise<Blob> => {
+    try {
+      const response = await api.get(`/api/invoices/${id}/pdf`, {
+        params: inline ? { inline: true } : undefined,
+        responseType: 'blob',
+      });
+      return response.data;
+    } catch (error) {
+      throw handleError(error as AxiosError);
+    }
+  },
+};
+
+export const accountApi = {
+  me: async (): Promise<MeResponse> => {
+    try {
+      const response = await api.get('/api/account/me');
+      return response.data;
+    } catch (error) {
+      throw handleError(error as AxiosError);
+    }
+  },
+
+  updateBusinessProfile: async (data: {
+    company_name: string;
+    company_email?: string | null;
+    company_address?: string | null;
+    company_phone?: string | null;
+  }): Promise<BusinessProfile> => {
+    try {
+      const response = await api.put('/api/account/business-profile', data);
+      return response.data;
+    } catch (error) {
+      throw handleError(error as AxiosError);
+    }
   },
 };
 
@@ -218,13 +270,13 @@ export const chatApi = {
   },
 
   // Messaging
-  send: async (content: string, sessionId?: string, imageUrls?: string[]): Promise<ChatResponse> => {
+  send: async (content: string, sessionId?: string, imageRefs?: string[]): Promise<ChatResponse> => {
     try {
       const response = await api.post('/api/chat', {
         content,
         session_id: sessionId,
-        image_url: imageUrls?.[0],  // Primary image for legacy support
-        image_urls: imageUrls,  // All images
+        image_url: imageRefs?.[0],
+        image_urls: imageRefs,
       });
       return response.data;
     } catch (error) {
@@ -233,7 +285,7 @@ export const chatApi = {
   },
 
   // Upload image to S3
-  uploadImage: async (file: File): Promise<{ url: string; filename: string }> => {
+  uploadImage: async (file: File): Promise<{ asset_id: string; asset_ref: string; url: string; filename: string }> => {
     try {
       const formData = new FormData();
       formData.append('file', file);

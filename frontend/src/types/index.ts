@@ -190,3 +190,40 @@ export interface GenerateEmailResponse {
   subject: string;
   body: string;
 }
+
+export interface Workspace {
+  id: string;
+  name: string;
+  slug: string;
+  onboarding_completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BusinessProfile {
+  id: string;
+  workspace_id: string;
+  company_name: string;
+  company_email: string | null;
+  company_address: string | null;
+  company_phone: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AppUser {
+  id: string;
+  clerk_user_id: string;
+  email: string;
+  full_name: string | null;
+  workspace_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MeResponse {
+  user: AppUser;
+  workspace: Workspace;
+  business_profile: BusinessProfile | null;
+  needs_onboarding: boolean;
+}

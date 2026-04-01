@@ -8,8 +8,9 @@ An AI-powered invoice generator with a chat interface. Describe your invoice in 
 - FastAPI (Python 3.11+)
 - PostgreSQL + SQLAlchemy
 - WeasyPrint (PDF generation)
-- OpenRouter API (Claude 3.5 Sonnet)
-- AWS S3 (image storage)
+- OpenRouter API (Gemini 2.5 Pro by default)
+- AWS S3 (private workspace-scoped image storage)
+- Clerk-backed authentication
 
 **Frontend**
 - React 19 + TypeScript
@@ -28,6 +29,7 @@ An AI-powered invoice generator with a chat interface. Describe your invoice in 
 - **Preview Versioning** - Track invoice preview iterations (v1, v2, v3...) during creation
 - **Archive Support** - Archive old chat sessions and invoices to keep things tidy
 - **Mobile Optimized** - Clean, touch-friendly UI for creating invoices on the go
+- **Multi-User SaaS Foundation** - Per-workspace isolation for clients, invoices, chats, and branding
 
 ## How It Works
 
@@ -71,7 +73,7 @@ docker-compose up
 - Backend: http://localhost:8000
 - Frontend: http://localhost:5173
 
-> **Note:** You still need `backend/.env` with your credentials. Copy from `.env.example`.
+> **Note:** You still need `backend/.env` with your credentials. If you want real auth locally, also create `frontend/.env.local`.
 >
 > See [DOCKER.md](DOCKER.md) for detailed Docker guide.
 
@@ -118,6 +120,9 @@ cd frontend
 # Install dependencies
 npm install
 
+# Copy environment template if you want local Clerk auth
+cp .env.example .env.local
+
 # Start dev server
 npm run dev
 ```
@@ -134,22 +139,40 @@ brew install pango cairo libffi gdk-pixbuf
 
 ## Environment Variables
 
-Create `backend/.env` with:
+Create `backend/.env` with values from `backend/.env.example`.
+
+If you want real auth locally, also create `frontend/.env.local` from `frontend/.env.example`.
+
+### Backend Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `DATABASE_URL` | ✅ | PostgreSQL connection string |
 | `OPENROUTER_API_KEY` | ✅ | API key from [OpenRouter](https://openrouter.ai/) |
-| `OPENROUTER_MODEL` | | AI model (default: `anthropic/claude-3.5-sonnet`) |
-| `COMPANY_NAME` | ✅ | Your name/company for invoice header |
-| `COMPANY_EMAIL` | | Contact email on invoices |
-| `COMPANY_ADDRESS` | | Address on invoices |
-| `COMPANY_PHONE` | | Phone on invoices |
+| `OPENROUTER_MODEL` | | AI model (default: `google/gemini-2.5-pro`) |
+| `CLERK_JWKS_URL` | Recommended for auth | Clerk JWKS URL for JWT verification |
+| `CLERK_ISSUER` | Alternative | Clerk issuer URL if you prefer deriving the JWKS URL |
+| `CLERK_SECRET_KEY` | Recommended for auth | Used to fetch Clerk user details during provisioning |
+| `CLERK_AUDIENCE` | Optional | Audience validation if your Clerk setup uses it |
+| `BOOTSTRAP_OWNER_EMAIL` | Recommended for cutover | Email that should claim legacy single-tenant data on first real login |
+| `COMPANY_NAME` | Optional | Bootstrap/dev fallback company name |
+| `COMPANY_EMAIL` | Optional | Bootstrap/dev fallback company email |
+| `COMPANY_ADDRESS` | Optional | Bootstrap/dev fallback address |
+| `COMPANY_PHONE` | Optional | Bootstrap/dev fallback phone |
 | `AWS_ACCESS_KEY_ID` | | For image uploads (optional) |
 | `AWS_SECRET_ACCESS_KEY` | | For image uploads (optional) |
 | `AWS_S3_BUCKET` | | S3 bucket name (optional) |
 | `AWS_S3_REGION` | | S3 region (default: `us-east-1`) |
 | `FRONTEND_URL` | | Frontend URL for CORS (default: `http://localhost:5173`) |
+
+### Frontend Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `VITE_API_URL` | Recommended | Backend base URL |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Required for real auth | Clerk publishable key for sign-in/sign-up |
+
+Without Clerk vars, the app runs in development bypass mode locally.
 
 ## Deployment
 
@@ -159,6 +182,7 @@ Create `backend/.env` with:
 2. **Build command:** `npm run build`
 3. **Publish directory:** `dist`
 4. **Environment variable:** `VITE_API_URL` = your backend URL
+5. **Environment variable:** `VITE_CLERK_PUBLISHABLE_KEY` = your Clerk frontend key
 
 ### Backend (Render with Docker)
 
@@ -172,10 +196,14 @@ Create `backend/.env` with:
 | `DATABASE_URL` | ✅ | `postgresql://...` (Neon) |
 | `OPENROUTER_API_KEY` | ✅ | `sk-or-v1-...` |
 | `FRONTEND_URL` | ✅ | `https://your-app.netlify.app` |
-| `COMPANY_NAME` | ✅ | `Your Name` |
+| `CLERK_JWKS_URL` or `CLERK_ISSUER` | ✅ for real auth | Clerk JWT verification settings |
+| `CLERK_SECRET_KEY` | ✅ for provisioning | Clerk backend secret |
+| `BOOTSTRAP_OWNER_EMAIL` | Recommended at cutover | Existing owner email for legacy data claim |
 | `AWS_ACCESS_KEY_ID` | | For image uploads |
 | `AWS_SECRET_ACCESS_KEY` | | For image uploads |
 | `AWS_S3_BUCKET` | | Your bucket name |
+
+See `docs/clerk-launch-checklist.md` for the full auth launch flow and cutover checklist.
 
 ## Project Structure
 

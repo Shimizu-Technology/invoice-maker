@@ -3,7 +3,7 @@
 import uuid
 from datetime import datetime, date, timezone
 from decimal import Decimal
-from sqlalchemy import String, Text, DateTime, Date, Numeric, ForeignKey, Enum as SQLEnum
+from sqlalchemy import String, Text, DateTime, Date, Numeric, ForeignKey, Enum as SQLEnum, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ..database import Base
 import enum
@@ -21,9 +21,15 @@ class Invoice(Base):
     """Invoice model storing invoice details and line items."""
 
     __tablename__ = "invoices"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "invoice_number", name="uq_invoices_workspace_number"),
+    )
 
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    workspace_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("workspaces.id"), nullable=False
     )
     client_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("clients.id"), nullable=False
@@ -55,6 +61,7 @@ class Invoice(Base):
     )
 
     # Relationships
+    workspace: Mapped["Workspace"] = relationship("Workspace", back_populates="invoices")
     client: Mapped["Client"] = relationship("Client", back_populates="invoices")
     session: Mapped["ChatSession"] = relationship("ChatSession", back_populates="invoices")
     hours_entries: Mapped[list["HoursEntry"]] = relationship(

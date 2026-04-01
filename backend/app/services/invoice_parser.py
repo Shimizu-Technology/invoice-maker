@@ -19,6 +19,7 @@ class InvoiceParser:
         self,
         message: str,
         db: Session,
+        workspace_id: str,
         conversation_history: Optional[list[dict]] = None,
         image_urls: Optional[list[str]] = None,
         current_preview: Optional[dict] = None,
@@ -39,7 +40,7 @@ class InvoiceParser:
             Response dict with status and data
         """
         # Build client context
-        client_context = self._build_client_context(db)
+        client_context = self._build_client_context(db, workspace_id)
 
         # Extract invoice data using AI
         extraction = ai_service.extract_invoice_data(
@@ -60,16 +61,16 @@ class InvoiceParser:
 
         if extraction.get("status") == "ready":
             invoice_data = extraction.get("invoice_data", {})
-            return self._process_invoice_data(invoice_data, db)
+            return self._process_invoice_data(invoice_data, db, workspace_id)
 
         return {
             "status": "error",
             "message": "Could not process your request. Please try again.",
         }
 
-    def _build_client_context(self, db: Session) -> str:
+    def _build_client_context(self, db: Session, workspace_id: str) -> str:
         """Build context string with client information."""
-        clients = db.query(Client).all()
+        clients = db.query(Client).filter(Client.workspace_id == workspace_id).all()
         if not clients:
             return "No clients registered yet."
 
@@ -89,11 +90,11 @@ class InvoiceParser:
 
         return "\n".join(context_parts)
 
-    def _process_invoice_data(self, invoice_data: dict, db: Session) -> dict:
+    def _process_invoice_data(self, invoice_data: dict, db: Session, workspace_id: str) -> dict:
         """Process extracted invoice data and create/preview invoice."""
         # Find or create client
         client_name = invoice_data.get("client_name", "").strip()
-        client = self._find_or_suggest_client(client_name, db)
+        client = self._find_or_suggest_client(client_name, db, workspace_id)
 
         if client is None:
             return {
@@ -133,7 +134,7 @@ class InvoiceParser:
         return normalized.strip()
 
     def _find_or_suggest_client(
-        self, client_name: str, db: Session
+        self, client_name: str, db: Session, workspace_id: str
     ) -> Optional[Client]:
         """Find a client by name (case-insensitive, normalized match)."""
         if not client_name:
@@ -141,6 +142,7 @@ class InvoiceParser:
 
         # Exact match first
         client = db.query(Client).filter(
+            Client.workspace_id == workspace_id,
             Client.name.ilike(client_name)
         ).first()
         if client:
@@ -148,6 +150,7 @@ class InvoiceParser:
 
         # Partial match
         client = db.query(Client).filter(
+            Client.workspace_id == workspace_id,
             Client.name.ilike(f"%{client_name}%")
         ).first()
         if client:
@@ -155,7 +158,7 @@ class InvoiceParser:
 
         # Normalized match - strip LLC, Inc, etc. and compare
         normalized_input = self._normalize_client_name(client_name)
-        all_clients = db.query(Client).all()
+        all_clients = db.query(Client).filter(Client.workspace_id == workspace_id).all()
         for c in all_clients:
             normalized_db = self._normalize_client_name(c.name)
             # Check if normalized names match (case-insensitive)
@@ -211,13 +214,14 @@ class InvoiceParser:
         next_seq = max_seq + 1
         return f"{prefix}-{year}-{next_seq:03d}"
     
-    def _get_unique_invoice_number(self, base_number: str, db: Session) -> str:
-        """Ensure invoice number is unique by adding version suffix if needed."""
+    def _get_unique_invoice_number(self, base_number: str, workspace_id: str, db: Session) -> str:
+        """Ensure invoice number is unique within a workspace by adding version suffix if needed."""
         if db is None:
             return base_number
 
         # Check if base number exists
         existing = db.query(Invoice).filter(
+            Invoice.workspace_id == workspace_id,
             Invoice.invoice_number == base_number
         ).first()
         if not existing:
@@ -228,6 +232,7 @@ class InvoiceParser:
         while version <= ord('z'):
             candidate = f"{base_number}{chr(version)}"
             existing = db.query(Invoice).filter(
+                Invoice.workspace_id == workspace_id,
                 Invoice.invoice_number == candidate
             ).first()
             if not existing:
@@ -323,16 +328,21 @@ class InvoiceParser:
         return None
 
     def create_invoice_from_preview(
-        self, preview: dict, db: Session, session_id: Optional[str] = None
+        self,
+        preview: dict,
+        db: Session,
+        workspace_id: str,
+        session_id: Optional[str] = None,
     ) -> Invoice:
         """Create an actual invoice from a preview."""
         # Ensure invoice number is unique at creation time
         # (in case another invoice was created since preview was generated)
         base_number = preview["invoice_number"]
-        unique_number = self._get_unique_invoice_number(base_number, db)
+        unique_number = self._get_unique_invoice_number(base_number, workspace_id, db)
 
         # Create invoice
         invoice = Invoice(
+            workspace_id=workspace_id,
             client_id=preview["client_id"],
             session_id=session_id,  # Link to chat session for context
             invoice_number=unique_number,
@@ -370,7 +380,10 @@ class InvoiceParser:
             db.add(db_item)
 
         # If client had a manual next_invoice_number, increment it for next time
-        client = db.query(Client).filter(Client.id == preview["client_id"]).first()
+        client = db.query(Client).filter(
+            Client.id == preview["client_id"],
+            Client.workspace_id == workspace_id,
+        ).first()
         if client and client.next_invoice_number is not None:
             client.next_invoice_number += 1
 

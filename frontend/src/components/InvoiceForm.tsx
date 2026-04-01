@@ -18,6 +18,25 @@ interface LineItemInput {
   rate: string;
 }
 
+interface InvoiceCreatePayload {
+  client_id: string;
+  invoice_number: string;
+  date: string;
+  service_period_start: string | null;
+  service_period_end: string | null;
+  notes: string | null;
+  hours_entries: Array<{
+    date: string;
+    hours: number;
+    rate: number;
+  }>;
+  line_items: Array<{
+    description: string;
+    quantity: number;
+    rate: number;
+  }>;
+}
+
 export default function InvoiceForm() {
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState('');
@@ -69,7 +88,7 @@ export default function InvoiceForm() {
     try {
       const data = await clientsApi.list();
       setClients(data);
-    } catch (err) {
+    } catch {
       setError('Failed to load clients');
     }
   };
@@ -141,7 +160,7 @@ export default function InvoiceForm() {
     setIsSubmitting(true);
 
     try {
-      const invoiceData: any = {
+      const invoiceData: InvoiceCreatePayload = {
         client_id: selectedClientId,
         invoice_number: invoiceNumber,
         date: invoiceDate,

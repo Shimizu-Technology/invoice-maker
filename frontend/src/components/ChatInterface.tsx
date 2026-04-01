@@ -13,7 +13,8 @@ interface PendingClientCreation {
   name: string;
   templateType: string;
   originalMessage: string;
-  originalImageUrls?: string[];  // Store images to retry after client creation
+  originalImageRefs?: string[];
+  originalImageUrls?: string[];
 }
 
 interface CreatedInvoice {
@@ -63,6 +64,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
   
   // PDF preview modal
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   
   // Copy success feedback - stores message index that was just copied
   const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
@@ -284,6 +286,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
 
     // Handle multiple image uploads
     let imageUrls: string[] = [];
+    let imageRefs: string[] = [];
     const imagesToUpload = [...pendingImages];
     
     if (!messageOverride) {
@@ -321,6 +324,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
           const uploadPromises = imagesToUpload.map(img => chatApi.uploadImage(img.file));
           const uploadResults = await Promise.all(uploadPromises);
           imageUrls = uploadResults.map(result => result.url);
+          imageRefs = uploadResults.map(result => result.asset_ref);
           
           // Update the message with the S3 URLs instead of local previews
           setMessages((prev) => 
@@ -330,17 +334,20 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                 : msg
             )
           );
+          imagesToUpload.forEach(img => URL.revokeObjectURL(img.preview));
         } catch (uploadError) {
           console.error('Failed to upload images:', uploadError);
           // Continue without images if upload fails
         } finally {
           setIsUploadingImage(false);
-          // Revoke the object URLs to free memory
-          imagesToUpload.forEach(img => URL.revokeObjectURL(img.preview));
         }
       }
 
-      const response = await chatApi.send(userMessage, currentSessionId || undefined, imageUrls.length > 0 ? imageUrls : undefined);
+      const response = await chatApi.send(
+        userMessage,
+        currentSessionId || undefined,
+        imageRefs.length > 0 ? imageRefs : undefined
+      );
       
       // Update session ID and URL if new session was created
       if (response.session_id !== currentSessionId) {
@@ -400,6 +407,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
           name: response.suggested_client.name,
           templateType: response.suggested_client.template_type || 'project',
           originalMessage: userMessage,
+          originalImageRefs: imageRefs.length > 0 ? imageRefs : undefined,
           originalImageUrls: imageUrls.length > 0 ? imageUrls : undefined,
         });
       }
@@ -449,6 +457,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
 
       // Store the original message and images to retry
       const originalMessage = pendingClientCreation.originalMessage;
+      const originalImageRefs = pendingClientCreation.originalImageRefs;
       const originalImageUrls = pendingClientCreation.originalImageUrls;
       setPendingClientCreation(null);
 
@@ -467,7 +476,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       const retryResponse = await chatApi.send(
         originalMessage, 
         currentSessionId,
-        originalImageUrls  // Pass images to the API
+        originalImageRefs
       );
       
       const assistantMessage: ChatMessage = {
@@ -566,11 +575,26 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
   };
 
   const handleDownloadPdf = () => {
-    if (createdInvoice?.pdfUrl) {
-      // Open PDF in new tab (browser will handle download or display)
-      const fullUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${createdInvoice.pdfUrl}`;
-      window.open(fullUrl, '_blank');
+    if (!createdInvoice?.invoiceId) return;
+    void (async () => {
+      const blob = await invoicesApi.fetchPdfBlob(createdInvoice.invoiceId);
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `${createdInvoice.invoiceNumber}.pdf`;
+      link.click();
+      URL.revokeObjectURL(objectUrl);
+    })();
+  };
+
+  const handleOpenPdfPreview = async () => {
+    if (!createdInvoice?.invoiceId) return;
+    const blob = await invoicesApi.fetchPdfBlob(createdInvoice.invoiceId, true);
+    if (pdfPreviewUrl) {
+      URL.revokeObjectURL(pdfPreviewUrl);
     }
+    setPdfPreviewUrl(URL.createObjectURL(blob));
+    setShowPdfPreview(true);
   };
 
   const handleViewInvoice = () => {
@@ -1353,7 +1377,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                 <span className="hidden sm:inline">Download</span>
               </button>
               <button
-                onClick={() => setShowPdfPreview(true)}
+                onClick={() => void handleOpenPdfPreview()}
                 className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 title="Preview PDF"
               >
@@ -1625,10 +1649,16 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
       )}
 
       {/* PDF Preview Modal */}
-      {showPdfPreview && createdInvoice?.pdfUrl && (
+      {showPdfPreview && pdfPreviewUrl && createdInvoice && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          onClick={() => setShowPdfPreview(false)}
+          onClick={() => {
+            setShowPdfPreview(false);
+            if (pdfPreviewUrl) {
+              URL.revokeObjectURL(pdfPreviewUrl);
+              setPdfPreviewUrl(null);
+            }
+          }}
         >
           <div 
             className="relative bg-white rounded-lg shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col"
@@ -1653,7 +1683,13 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                   Download
                 </button>
                 <button
-                  onClick={() => setShowPdfPreview(false)}
+                  onClick={() => {
+                    setShowPdfPreview(false);
+                    if (pdfPreviewUrl) {
+                      URL.revokeObjectURL(pdfPreviewUrl);
+                      setPdfPreviewUrl(null);
+                    }
+                  }}
                   className="p-1.5 text-stone-500 hover:text-stone-700 hover:bg-stone-200 rounded-md transition-colors"
                   title="Close"
                 >
@@ -1667,7 +1703,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
             {/* PDF Iframe */}
             <div className="flex-1 bg-stone-100">
               <iframe
-                src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${createdInvoice.pdfUrl}?inline=true`}
+                src={pdfPreviewUrl}
                 className="w-full h-full rounded-b-lg"
                 title="Invoice PDF Preview"
               />

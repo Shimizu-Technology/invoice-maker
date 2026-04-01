@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { invoicesApi, clientsApi } from '../services/api';
 import type { Invoice, Client } from '../types';
+import AuthUserControl from '../components/auth/AuthUserControl';
 
 export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
@@ -30,7 +31,7 @@ export default function InvoiceDetail() {
 
       const clientData = await clientsApi.get(invoiceData.client_id);
       setClient(clientData);
-    } catch (err) {
+    } catch {
       setError('Failed to load invoice');
     } finally {
       setIsLoading(false);
@@ -39,7 +40,15 @@ export default function InvoiceDetail() {
 
   const handleDownloadPdf = () => {
     if (invoice) {
-      window.open(invoicesApi.getPdfUrl(invoice.id), '_blank');
+      void (async () => {
+        const blob = await invoicesApi.fetchPdfBlob(invoice.id);
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = `${invoice.invoice_number}.pdf`;
+        link.click();
+        URL.revokeObjectURL(objectUrl);
+      })();
     }
   };
 
@@ -135,16 +144,18 @@ export default function InvoiceDetail() {
               </span>
             </div>
             
-            {/* Desktop Download Button */}
-            <button
-              onClick={handleDownloadPdf}
-              className="hidden sm:flex px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors items-center min-h-[44px] font-medium shadow-sm"
-            >
-              <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Download PDF
-            </button>
+            <div className="hidden sm:flex items-center gap-2">
+              <AuthUserControl />
+              <button
+                onClick={handleDownloadPdf}
+                className="flex px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors items-center min-h-[44px] font-medium shadow-sm"
+              >
+                <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Download PDF
+              </button>
+            </div>
 
             {/* Mobile Menu Button */}
             <button

@@ -471,6 +471,8 @@ RULES:
         invoice_type: str = "hourly",
         payment_number: Optional[str] = None,
         custom_greeting: Optional[str] = None,
+        sender_name: Optional[str] = None,
+        company_name: Optional[str] = None,
     ) -> str:
         """
         Generate a professional email body for the invoice.
@@ -486,10 +488,15 @@ RULES:
             invoice_type: Type of invoice (hourly, project, etc.)
             payment_number: Payment installment (e.g., "4/6")
             custom_greeting: Custom greeting override
+            sender_name: Name to use in the signature
+            company_name: Company name to reference in the body
 
         Returns:
             Formatted email body
         """
+        sender_name = sender_name or company_name or settings.company_name or "Your Name"
+        company_name = company_name or settings.company_name or sender_name
+
         # Format the period
         from datetime import datetime
         try:
@@ -516,7 +523,7 @@ Attached is my invoice {invoice_number} for the period {period_str}.
 
 Thank you and please let me know if you need any additional details or adjustments.
 
-Leon Shimizu""",
+{sender_name}""",
 
             "actualize": f"""Hi Sandra,
 
@@ -524,7 +531,7 @@ Here's my work hours for the period {period_str}.
 {f"Total: {hours_info} = ${total_amount:,.2f}." if hours_info else f"Total: ${total_amount:,.2f}"}
 
 Thank you!
-Leon Shimizu""",
+{sender_name}""",
 
             "code school": f"""Hi Sandra,
 
@@ -532,7 +539,7 @@ Attached is my invoice {invoice_number} for the period {period_str}.
 Total: ${total_amount:,.2f}
 
 Thank you!
-Leon Shimizu""",
+{sender_name}""",
 
             "hafaloha": f"""Hi Hafaloha Team,
 
@@ -543,15 +550,15 @@ Invoice summary:
 • Monthly subscription (hosting & 24/7 support) — $150
 Total outstanding: ${total_amount:,.2f}
 
-Checks (or cash) can be made payable to Shimizu Technology LLC.
+Checks (or cash) can be made payable to {company_name}.
 
 If payment has already been sent, thank you—and please disregard this note.
 
 Appreciate you all—thanks as always for the partnership.
 
 Best,
-— Leon Shimizu
-Founder | Shimizu Technology LLC""",
+— {sender_name}
+{company_name}""",
 
             "guam": f"""Hi Team,
 
@@ -562,8 +569,8 @@ Total Due: ${total_amount:,.2f}
 Please let me know if you have any questions.
 
 Best regards,
-Leon Shimizu
-Shimizu Technology LLC""",
+{sender_name}
+{company_name}""",
 
             "default": f"""Hi {client_name} Team,
 
@@ -571,13 +578,13 @@ Please find attached Invoice {invoice_number} for the period {period_str}.
 
 Total Due: ${total_amount:,.2f}
 
-Please remit payment by check or ACH to Shimizu Technology. If you require a W-9 or purchase-order reference, please let me know.
+Please remit payment by check or ACH to {company_name}. If you require a W-9 or purchase-order reference, please let me know.
 
 Thank you for the opportunity to work together!
 
 Best regards,
-Leon Shimizu
-Founder | Shimizu Technology LLC"""
+{sender_name}
+{company_name}"""
         }
 
         # Select template based on client name

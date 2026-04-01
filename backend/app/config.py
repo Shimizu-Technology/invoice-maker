@@ -15,6 +15,13 @@ class Settings(BaseSettings):
     openrouter_api_key: str
     openrouter_model: str = "google/gemini-2.5-pro"
 
+    # Clerk Auth
+    clerk_secret_key: Optional[str] = None
+    clerk_jwks_url: Optional[str] = None
+    clerk_issuer: Optional[str] = None
+    clerk_audience: Optional[str] = None
+    bootstrap_owner_email: Optional[str] = None
+
     # Application
     environment: str = "development"
     debug: bool = True

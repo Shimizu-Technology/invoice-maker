@@ -12,6 +12,10 @@ Thumbs.db
 logs/
 *.log
 
+# Local environment files
+backend/.env
+frontend/.env.local
+
 # Temporary/generated files from development tools
 .call_count
 .circuit_breaker_history

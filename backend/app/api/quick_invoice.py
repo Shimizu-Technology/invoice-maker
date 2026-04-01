@@ -5,10 +5,12 @@ from decimal import Decimal
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from ..auth import get_current_workspace
 from ..database import get_db
 from ..models.client import Client
 from ..models.invoice import Invoice
 from ..models.hours_entry import HoursEntry
+from ..models.workspace import Workspace
 from ..schemas.chat import (
     ExtractHoursFromImageRequest,
     ParseHoursTextRequest,
@@ -29,6 +31,7 @@ router = APIRouter()
 async def extract_hours_from_image(
     request: ExtractHoursFromImageRequest,
     db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """
     Extract work hours from an uploaded image using AI vision.
@@ -64,6 +67,7 @@ async def extract_hours_from_image(
 async def parse_hours_from_text(
     request: ParseHoursTextRequest,
     db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """
     Parse work hours from pasted text.
@@ -100,6 +104,7 @@ async def parse_hours_from_text(
 async def generate_email_body(
     request: GenerateEmailRequest,
     db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """
     Generate a professional email body for an invoice.
@@ -116,6 +121,8 @@ async def generate_email_body(
         total_amount=request.total_amount,
         invoice_type=request.invoice_type,
         payment_number=request.payment_number,
+        sender_name=workspace.business_profile.company_name if workspace.business_profile else None,
+        company_name=workspace.business_profile.company_name if workspace.business_profile else None,
     )
     
     # Generate subject line
@@ -138,6 +145,7 @@ def generate_invoice_number(client: Client, invoice_date: datetime) -> str:
 async def create_quick_invoice(
     request: QuickInvoiceRequest,
     db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """
     Create an invoice quickly with pre-extracted hours.
@@ -146,7 +154,11 @@ async def create_quick_invoice(
     after hours have been extracted from an image or parsed from text.
     """
     # Get the client
-    client = db.query(Client).filter(Client.id == request.client_id).first()
+    client = (
+        db.query(Client)
+        .filter(Client.id == request.client_id, Client.workspace_id == workspace.id)
+        .first()
+    )
     if not client:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -176,9 +188,10 @@ async def create_quick_invoice(
     
     # Create the invoice
     invoice = Invoice(
+        workspace_id=workspace.id,
         client_id=client.id,
         invoice_number=invoice_number,
-        invoice_date=invoice_date,
+        date=invoice_date,
         service_period_start=start_date,
         service_period_end=end_date,
         total_amount=total_amount,
@@ -211,7 +224,8 @@ async def create_quick_invoice(
             client=client,
             hours_entries=hours_entries_db,
             line_items=[],
-            template_type="contract_hourly",
+            template_type="hourly",
+            user=workspace.business_profile.to_company_info() if workspace.business_profile else None,
         )
         invoice.pdf_path = pdf_path
         db.commit()
@@ -232,6 +246,8 @@ async def create_quick_invoice(
             rate=float(rate),
             total_amount=float(total_amount),
             invoice_type="hourly",
+            sender_name=workspace.business_profile.company_name if workspace.business_profile else None,
+            company_name=workspace.business_profile.company_name if workspace.business_profile else None,
         )
         email_subject = f"Invoice {invoice_number} - {client.name}"
     

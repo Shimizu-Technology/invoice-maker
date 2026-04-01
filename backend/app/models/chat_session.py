@@ -23,6 +23,9 @@ class ChatSession(Base):
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
+    workspace_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
+    )
     client_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("clients.id", ondelete="SET NULL"), nullable=True
     )
@@ -43,6 +46,7 @@ class ChatSession(Base):
     )
 
     # Relationships
+    workspace: Mapped["Workspace"] = relationship("Workspace", back_populates="chat_sessions")
     client: Mapped["Client"] = relationship("Client", back_populates="chat_sessions")
     messages: Mapped[list["ChatMessage"]] = relationship(
         "ChatMessage", back_populates="session", cascade="all, delete-orphan",

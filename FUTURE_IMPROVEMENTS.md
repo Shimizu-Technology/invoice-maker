@@ -21,6 +21,29 @@ A running list of planned enhancements and nice-to-have features.
 
 ## Feature Ideas
 
+### Multi-User SaaS Enhancements
+**Priority:** Medium  
+**Description:** After the initial multi-user MVP ships, expand the account system beyond one-user/one-workspace.
+
+**Future areas:**
+- Invite teammates into the same workspace
+- Add member roles and permissions
+- Support multiple workspaces per user
+- Add admin/support tooling for account troubleshooting
+- Add optional signup controls like email whitelisting or invite-only mode
+- Add billing, quotas, and usage dashboards
+
+**Notes:**  
+The MVP should stay intentionally simple:
+- open signup
+- Clerk auth
+- one workspace per user
+- strict per-workspace data isolation
+
+See `docs/multi-user-saas-plan.md` for the implementation roadmap and long-term architecture.
+
+---
+
 ### Copy from Last Invoice
 **Priority:** Medium  
 **Description:** For recurring clients, add a "Copy from last invoice" option that pre-fills the new invoice with the previous invoice's line items, just updating dates and amounts as needed.
@@ -290,3 +313,7 @@ Padding: p-4 or p-6 (consistent)
 ---
 
 *Last updated: January 19, 2026*
+
+
+
+Solid so another thing is that I want to allow people/businesses to be able to put their logo on the top if they have it and then they upload it - that would be cool for us too for Shimizu Technology and stuff 

@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { invoicesApi, clientsApi } from '../services/api';
 import type { Invoice, Client, InvoiceStatus } from '../types';
+import AuthUserControl from '../components/auth/AuthUserControl';
 
 export default function History() {
   const navigate = useNavigate();
@@ -51,7 +52,7 @@ export default function History() {
       ]);
       setInvoices(invoicesData);
       setClients(clientsData);
-    } catch (err) {
+    } catch {
       setError('Failed to load data');
     } finally {
       setIsLoading(false);
@@ -69,7 +70,7 @@ export default function History() {
 
       const data = await invoicesApi.list(params);
       setInvoices(data);
-    } catch (err) {
+    } catch {
       setError('Failed to load invoices');
     }
   };
@@ -80,7 +81,7 @@ export default function History() {
     try {
       await invoicesApi.delete(id);
       setInvoices((prev) => prev.filter((inv) => inv.id !== id));
-    } catch (err) {
+    } catch {
       setError('Failed to delete invoice');
     }
   };
@@ -89,7 +90,7 @@ export default function History() {
     try {
       await invoicesApi.archive(id);
       setInvoices((prev) => prev.filter((inv) => inv.id !== id));
-    } catch (err) {
+    } catch {
       setError('Failed to archive invoice');
     }
   };
@@ -106,7 +107,7 @@ export default function History() {
           inv.id === id ? { ...inv, archived: false } : inv
         ));
       }
-    } catch (err) {
+    } catch {
       setError('Failed to restore invoice');
     }
   };
@@ -126,7 +127,16 @@ export default function History() {
   };
 
   const handleDownloadPdf = (id: string) => {
-    window.open(invoicesApi.getPdfUrl(id), '_blank');
+    void (async () => {
+      const invoiceRecord = invoices.find((inv) => inv.id === id);
+      const blob = await invoicesApi.fetchPdfBlob(id);
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = `${invoiceRecord?.invoice_number || 'invoice'}.pdf`;
+      link.click();
+      URL.revokeObjectURL(objectUrl);
+    })();
   };
 
   const getClientName = (clientId: string): string => {
@@ -178,7 +188,7 @@ export default function History() {
         )
       );
       setStatusMenuOpen(null);
-    } catch (err) {
+    } catch {
       setError('Failed to update status');
     }
   };
@@ -226,27 +236,29 @@ export default function History() {
               </span>
             </Link>
             
-            {/* Desktop Navigation */}
-            <nav className="hidden sm:flex items-center gap-2">
-              <Link
-                to="/clients"
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100 text-sm font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Clients
-              </Link>
-              <Link
-                to="/history"
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-100 text-teal-700 text-sm font-medium"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                History
-              </Link>
-            </nav>
+            <div className="flex items-center gap-2">
+              <nav className="hidden sm:flex items-center gap-2">
+                <Link
+                  to="/clients"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-stone-600 hover:text-stone-900 hover:bg-stone-100 text-sm font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Clients
+                </Link>
+                <Link
+                  to="/history"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-teal-100 text-teal-700 text-sm font-medium"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  History
+                </Link>
+              </nav>
+              <AuthUserControl />
+            </div>
 
             {/* Mobile Menu Button */}
             <button

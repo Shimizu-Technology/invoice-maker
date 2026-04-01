@@ -6,7 +6,6 @@ from decimal import Decimal
 from datetime import date
 from typing import Optional, Any
 from jinja2 import Environment, FileSystemLoader
-from weasyprint import HTML, CSS
 
 from ..config import settings
 
@@ -291,6 +290,8 @@ class PDFGenerator:
         output_path = OUTPUT_DIR / f"{safe_filename}.pdf"
 
         # Generate PDF
+        from weasyprint import HTML
+
         html = HTML(string=html_content, base_url=str(TEMPLATE_DIR))
         html.write_pdf(str(output_path))
 

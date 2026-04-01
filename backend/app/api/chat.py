@@ -7,10 +7,14 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from decimal import Decimal
 
+from ..auth import get_current_user, get_current_workspace
 from ..database import get_db
 from ..models.client import Client, TemplateType
 from ..models.chat_session import ChatSession, ChatMessage, MessageRole
 from ..models.invoice import Invoice, InvoiceStatus
+from ..models.uploaded_asset import UploadedAsset
+from ..models.user import User
+from ..models.workspace import Workspace
 from ..schemas.chat import (
     ChatMessageCreate,
     ChatResponse,
@@ -31,28 +35,93 @@ from ..services.ai_service import ai_service
 from ..services.s3_service import s3_service
 
 router = APIRouter()
+ASSET_REF_PREFIX = "asset:"
 
 
 def get_or_create_session(
-    session_id: Optional[str], 
+    session_id: Optional[str],
     db: Session,
+    workspace: Workspace,
     client_id: Optional[str] = None
 ) -> ChatSession:
     """Get existing session or create a new one."""
     if session_id:
-        session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+        session = (
+            db.query(ChatSession)
+            .filter(ChatSession.id == session_id, ChatSession.workspace_id == workspace.id)
+            .first()
+        )
         if session:
             return session
     
     # Create new session
-    session = ChatSession(client_id=client_id)
+    session = ChatSession(workspace_id=workspace.id)
     if client_id:
-        client = db.query(Client).filter(Client.id == client_id).first()
+        client = (
+            db.query(Client)
+            .filter(Client.id == client_id, Client.workspace_id == workspace.id)
+            .first()
+        )
         if client:
+            session.client_id = client.id
             session.title = f"Chat with {client.name}"
     db.add(session)
     db.commit()
     db.refresh(session)
+    return session
+
+
+def make_asset_ref(asset_id: str) -> str:
+    """Create a stable stored reference for an uploaded asset."""
+    return f"{ASSET_REF_PREFIX}{asset_id}"
+
+
+def parse_asset_ref(value: str | None) -> str | None:
+    """Extract asset ID from a stored reference."""
+    if value and value.startswith(ASSET_REF_PREFIX):
+        return value[len(ASSET_REF_PREFIX):]
+    return None
+
+
+def resolve_image_reference(value: str, db: Session, workspace: Workspace) -> str:
+    """Resolve stored image references into signed URLs when needed."""
+    asset_id = parse_asset_ref(value)
+    if not asset_id:
+        return value
+
+    asset = (
+        db.query(UploadedAsset)
+        .filter(
+            UploadedAsset.id == asset_id,
+            UploadedAsset.workspace_id == workspace.id,
+        )
+        .first()
+    )
+    if not asset:
+        raise HTTPException(status_code=404, detail="Uploaded asset not found")
+    return s3_service.generate_presigned_url(asset.storage_key)
+
+
+def resolve_image_references(
+    values: list[str] | None,
+    db: Session,
+    workspace: Workspace,
+) -> list[str] | None:
+    """Resolve a list of image references into signed URLs."""
+    if not values:
+        return None
+    return [resolve_image_reference(value, db, workspace) for value in values]
+
+
+def get_workspace_session_or_404(session_id: str, db: Session, workspace: Workspace) -> ChatSession:
+    """Fetch a chat session for the current workspace or raise 404."""
+    session = (
+        db.query(ChatSession)
+        .filter(ChatSession.id == session_id, ChatSession.workspace_id == workspace.id)
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     return session
 
 
@@ -89,10 +158,15 @@ def get_conversation_history(session: ChatSession, limit: int = 20) -> list[dict
 async def list_sessions(
     client_id: Optional[str] = None,
     include_archived: bool = False,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """List all chat sessions, optionally filtered by client."""
-    query = db.query(ChatSession).order_by(ChatSession.updated_at.desc())
+    query = (
+        db.query(ChatSession)
+        .filter(ChatSession.workspace_id == workspace.id)
+        .order_by(ChatSession.updated_at.desc())
+    )
     
     if client_id:
         query = query.filter(ChatSession.client_id == client_id)
@@ -128,18 +202,26 @@ async def list_sessions(
 @router.post("/sessions", response_model=ChatSessionInfo)
 async def create_session(
     request: CreateSessionRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """Create a new chat session."""
     title = request.title or "New Chat"
+    client_id = None
     
     if request.client_id:
-        client = db.query(Client).filter(Client.id == request.client_id).first()
+        client = (
+            db.query(Client)
+            .filter(Client.id == request.client_id, Client.workspace_id == workspace.id)
+            .first()
+        )
         if client:
+            client_id = client.id
             title = f"Chat with {client.name}"
     
     session = ChatSession(
-        client_id=request.client_id,
+        workspace_id=workspace.id,
+        client_id=client_id,
         title=title,
     )
     db.add(session)
@@ -160,14 +242,13 @@ async def create_session(
 
 
 @router.get("/sessions/{session_id}", response_model=ChatSessionDetail)
-async def get_session(session_id: str, db: Session = Depends(get_db)):
+async def get_session(
+    session_id: str,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
+):
     """Get a chat session with all messages."""
-    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
-    if not session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found",
-        )
+    session = get_workspace_session_or_404(session_id, db, workspace)
     
     # Parse session-level invoice preview if stored
     session_preview = None
@@ -186,9 +267,12 @@ async def get_session(session_id: str, db: Session = Depends(get_db)):
         image_urls = None
         if msg.image_urls_json:
             try:
-                image_urls = json.loads(msg.image_urls_json)
+                raw_image_urls = json.loads(msg.image_urls_json)
+                image_urls = resolve_image_references(raw_image_urls, db, workspace)
             except (json.JSONDecodeError, TypeError):
                 pass
+        elif msg.image_url:
+            image_urls = [resolve_image_reference(msg.image_url, db, workspace)]
         
         # For messages with previews, use the stored preview JSON, not the session-level one
         msg_preview = None
@@ -237,9 +321,17 @@ async def get_session(session_id: str, db: Session = Depends(get_db)):
 
 
 @router.delete("/sessions/{session_id}")
-async def delete_session(session_id: str, db: Session = Depends(get_db)):
+async def delete_session(
+    session_id: str,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
+):
     """Delete a chat session."""
-    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
+    session = (
+        db.query(ChatSession)
+        .filter(ChatSession.id == session_id, ChatSession.workspace_id == workspace.id)
+        .first()
+    )
     if session:
         db.delete(session)
         db.commit()
@@ -247,22 +339,26 @@ async def delete_session(session_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/sessions/{session_id}/archive")
-async def archive_session(session_id: str, db: Session = Depends(get_db)):
+async def archive_session(
+    session_id: str,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
+):
     """Archive a chat session (hides from default list)."""
-    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = get_workspace_session_or_404(session_id, db, workspace)
     session.archived = True
     db.commit()
     return {"message": "Session archived", "archived": True}
 
 
 @router.post("/sessions/{session_id}/restore")
-async def restore_session(session_id: str, db: Session = Depends(get_db)):
+async def restore_session(
+    session_id: str,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
+):
     """Restore an archived chat session."""
-    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = get_workspace_session_or_404(session_id, db, workspace)
     session.archived = False
     db.commit()
     return {"message": "Session restored", "archived": False}
@@ -272,7 +368,8 @@ async def restore_session(session_id: str, db: Session = Depends(get_db)):
 async def save_event_message(
     session_id: str, 
     event: SaveEventMessage, 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """
     Save an event message to chat history.
@@ -284,9 +381,7 @@ async def save_event_message(
     
     These messages appear in conversation history and provide context for the AI.
     """
-    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = get_workspace_session_or_404(session_id, db, workspace)
     
     # Save as an assistant message (system event)
     event_msg = ChatMessage(
@@ -308,16 +403,15 @@ async def save_event_message(
 async def set_preview_version(
     session_id: str,
     message_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """
     Set a specific message's preview as the current preview for the session.
     
     Used when user clicks "Use this version" on an older preview card.
     """
-    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = get_workspace_session_or_404(session_id, db, workspace)
     
     # Find the message with the preview
     message = db.query(ChatMessage).filter(
@@ -351,16 +445,15 @@ class SetPreviewRequest(BaseModel):
 async def set_preview_data(
     session_id: str,
     request: SetPreviewRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """
     Set the current invoice preview for the session directly from preview data.
     
     Used when user selects a version from the dropdown.
     """
-    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
+    session = get_workspace_session_or_404(session_id, db, workspace)
     
     # Set this preview as the current session preview
     session.invoice_preview_json = json.dumps(request.preview)
@@ -373,7 +466,12 @@ async def set_preview_data(
 
 
 @router.post("", response_model=ChatResponse)
-async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
+@router.post("/", response_model=ChatResponse, include_in_schema=False)
+async def chat(
+    message: ChatMessageCreate,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
+):
     """
     Process a chat message for invoice creation.
 
@@ -383,7 +481,7 @@ async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
     - "Make an invoice for the website project, $2000"
     """
     # Get or create session
-    session = get_or_create_session(message.session_id, db)
+    session = get_or_create_session(message.session_id, db, workspace)
 
     # Save user message to database
     # Handle multiple images - store as JSON
@@ -405,7 +503,7 @@ async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
     lower_content = message.content.lower().strip()
     if lower_content in ["confirm", "yes", "create", "generate", "ok"]:
         if session.invoice_preview_json:
-            return await _confirm_invoice(session, db)
+            return await _confirm_invoice(session, db, workspace)
         else:
             # Save assistant response
             assistant_msg = ChatMessage(
@@ -450,10 +548,12 @@ async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
 
     # Process the message (with optional images)
     # Use image_urls if provided, otherwise fall back to single image_url
-    image_urls = message.image_urls or ([message.image_url] if message.image_url else None)
+    image_refs = message.image_urls or ([message.image_url] if message.image_url else None)
+    image_urls = resolve_image_references(image_refs, db, workspace) if image_refs else None
     result = invoice_parser.process_chat_message(
         message=message.content,
         db=db,
+        workspace_id=workspace.id,
         conversation_history=history[:-1],  # Exclude current message
         image_urls=image_urls,  # Pass image URLs for vision processing
         current_preview=current_preview,  # Pass current preview for modifications
@@ -544,7 +644,7 @@ async def chat(message: ChatMessageCreate, db: Session = Depends(get_db)):
         )
 
 
-async def _confirm_invoice(session: ChatSession, db: Session) -> ChatResponse:
+async def _confirm_invoice(session: ChatSession, db: Session, workspace: Workspace) -> ChatResponse:
     """Confirm and create an invoice from preview."""
     try:
         preview = json.loads(session.invoice_preview_json)
@@ -575,29 +675,17 @@ async def _confirm_invoice(session: ChatSession, db: Session) -> ChatResponse:
 
     try:
         # Create the invoice (linked to this chat session)
-        invoice = invoice_parser.create_invoice_from_preview(preview, db, session_id=session.id)
-
-        # Generate PDF
-        client = db.query(Client).filter(Client.id == invoice.client_id).first()
-        template_type = preview.get("invoice_type", "hourly")
-
-        # Get personal_name from preview if specified
-        personal_name = preview.get("personal_name")
-        
-        pdf_path = pdf_generator.generate_invoice_pdf(
-            invoice=invoice,
-            client=client,
-            hours_entries=list(invoice.hours_entries),
-            line_items=list(invoice.line_items),
-            template_type=template_type,
-            personal_name=personal_name,
+        invoice = invoice_parser.create_invoice_from_preview(
+            preview, db, workspace_id=workspace.id, session_id=session.id
         )
 
-        # Update invoice with PDF path and set status to generated
-        invoice.pdf_path = pdf_path
-        invoice.status = InvoiceStatus.GENERATED
-        
-        # Generate email for the invoice
+        client = (
+            db.query(Client)
+            .filter(Client.id == invoice.client_id, Client.workspace_id == workspace.id)
+            .first()
+        )
+        template_type = preview.get("invoice_type", "hourly")
+
         email_subject = f"Invoice {invoice.invoice_number} - {client.name}"
         email_body = ai_service.generate_email_body(
             client_name=client.name,
@@ -608,17 +696,42 @@ async def _confirm_invoice(session: ChatSession, db: Session) -> ChatResponse:
             rate=preview.get("hours_entries", [{}])[0].get("rate") if preview.get("hours_entries") else None,
             total_amount=invoice.total_amount,
             invoice_type=template_type,
+            sender_name=workspace.business_profile.company_name if workspace.business_profile else None,
+            company_name=workspace.business_profile.company_name if workspace.business_profile else None,
         )
-        
+
+        pdf_url = None
+        pdf_error = None
+        try:
+            # Get personal_name from preview if specified
+            personal_name = preview.get("personal_name")
+            pdf_path = pdf_generator.generate_invoice_pdf(
+                invoice=invoice,
+                client=client,
+                hours_entries=list(invoice.hours_entries),
+                line_items=list(invoice.line_items),
+                template_type=template_type,
+                personal_name=personal_name,
+                user=workspace.business_profile.to_company_info() if workspace.business_profile else None,
+            )
+            invoice.pdf_path = pdf_path
+            invoice.status = InvoiceStatus.GENERATED
+            pdf_url = f"/api/invoices/{invoice.id}/pdf"
+        except Exception as exc:
+            pdf_error = str(exc)
+
         # Mark preview as completed and store email for later retrieval
         preview["invoice_id"] = invoice.id
-        preview["pdf_url"] = f"/api/invoices/{invoice.id}/pdf"
+        preview["pdf_url"] = pdf_url
         preview["email_subject"] = email_subject
         preview["email_body"] = email_body
         session.invoice_preview_json = json.dumps(preview)
-        
-        # Save success message
-        success_message = f"Invoice {invoice.invoice_number} created successfully! PDF is ready for download."
+
+        success_message = (
+            f"Invoice {invoice.invoice_number} created successfully! PDF is ready for download."
+            if pdf_url
+            else f"Invoice {invoice.invoice_number} was created, but PDF generation failed: {pdf_error}"
+        )
         assistant_msg = ChatMessage(
             session_id=session.id,
             role=MessageRole.ASSISTANT,
@@ -632,7 +745,7 @@ async def _confirm_invoice(session: ChatSession, db: Session) -> ChatResponse:
             message=success_message,
             session_id=session.id,
             invoice_id=invoice.id,
-            pdf_url=f"/api/invoices/{invoice.id}/pdf",
+            pdf_url=pdf_url,
             email_subject=email_subject,
             email_body=email_body,
         )
@@ -656,15 +769,12 @@ async def _confirm_invoice(session: ChatSession, db: Session) -> ChatResponse:
 
 @router.post("/confirm", response_model=ChatResponse)
 async def confirm_invoice(
-    request: ConfirmInvoiceRequest, db: Session = Depends(get_db)
+    request: ConfirmInvoiceRequest,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """Confirm and create an invoice from the current preview."""
-    session = db.query(ChatSession).filter(ChatSession.id == request.session_id).first()
-    if not session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found",
-        )
+    session = get_workspace_session_or_404(request.session_id, db, workspace)
 
     if not session.invoice_preview_json:
         raise HTTPException(
@@ -672,25 +782,23 @@ async def confirm_invoice(
             detail="No invoice preview to confirm",
         )
 
-    return await _confirm_invoice(session, db)
+    return await _confirm_invoice(session, db, workspace)
 
 
 @router.post("/create-client", response_model=ChatResponse)
 async def create_client_from_chat(
-    request: CreateClientFromChat, db: Session = Depends(get_db)
+    request: CreateClientFromChat,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
 ):
     """Create a new client from chat when client not found."""
-    session = db.query(ChatSession).filter(ChatSession.id == request.session_id).first()
-    if not session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found",
-        )
+    session = get_workspace_session_or_404(request.session_id, db, workspace)
 
     # Create the client
     template_type = TemplateType(request.template_type) if request.template_type else TemplateType.HOURLY
 
     client = Client(
+        workspace_id=workspace.id,
         name=request.name,
         email=request.email,
         default_rate=Decimal(str(request.default_rate)),
@@ -723,14 +831,13 @@ async def create_client_from_chat(
 
 # Legacy endpoint for backwards compatibility
 @router.get("/session/{session_id}")
-async def get_session_history(session_id: str, db: Session = Depends(get_db)):
+async def get_session_history(
+    session_id: str,
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
+):
     """Get the conversation history for a session (legacy endpoint)."""
-    session = db.query(ChatSession).filter(ChatSession.id == session_id).first()
-    if not session:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Session not found",
-        )
+    session = get_workspace_session_or_404(session_id, db, workspace)
 
     return {
         "session_id": session_id,
@@ -743,7 +850,12 @@ async def get_session_history(session_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/upload-image")
-async def upload_image(file: UploadFile = File(...)):
+async def upload_image(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    workspace: Workspace = Depends(get_current_workspace),
+    user: User = Depends(get_current_user),
+):
     """Upload an image to S3 for use in chat messages."""
     # Validate S3 is configured
     if not s3_service.is_configured():
@@ -770,12 +882,28 @@ async def upload_image(file: UploadFile = File(...)):
         )
     
     try:
-        url = s3_service.upload_image(
+        storage_key = s3_service.upload_image(
             file_content=content,
             content_type=file.content_type,
             original_filename=file.filename,
+            workspace_id=workspace.id,
         )
-        return {"url": url, "filename": file.filename}
+        asset = UploadedAsset(
+            workspace_id=workspace.id,
+            uploaded_by_user_id=user.id,
+            storage_key=storage_key,
+            content_type=file.content_type,
+            original_filename=file.filename,
+        )
+        db.add(asset)
+        db.commit()
+        db.refresh(asset)
+        return {
+            "asset_id": asset.id,
+            "asset_ref": make_asset_ref(asset.id),
+            "url": s3_service.generate_presigned_url(asset.storage_key),
+            "filename": file.filename,
+        }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
