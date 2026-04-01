@@ -190,7 +190,7 @@
         <tbody>
             <tr>
                 <td>Software Engineering Services</td>
-                <td class="text-center">{{ "%.1f"|format(total_hours) }}</td>
+                <td class="text-center">{{ "{:,.1f}".format(total_hours) }}</td>
                 <td class="text-right">${{ "{:,.2f}".format(hourly_rate) }}</td>
                 <td class="text-right">${{ "{:,.2f}".format(invoice.total_amount) }}</td>
             </tr>

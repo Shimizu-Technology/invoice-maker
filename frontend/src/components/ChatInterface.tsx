@@ -615,7 +615,16 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
     }
   };
 
-  const handleRetryAction = async (retryAction: NonNullable<ChatMessage['retryAction']>) => {
+  const handleRetryAction = async (
+    messageIndex: number,
+    retryAction: NonNullable<ChatMessage['retryAction']>
+  ) => {
+    setMessages((prev) =>
+      prev.map((message, index) =>
+        index === messageIndex ? { ...message, retryAction: undefined } : message
+      )
+    );
+
     if (retryAction.type === 'retry_confirm_invoice') {
       await handleConfirmInvoice(false);
       return;
@@ -1117,7 +1126,7 @@ export default function ChatInterface({ sessionIdFromUrl }: ChatInterfaceProps) 
                   {message.retryAction && (
                     <div className="mt-3">
                       <button
-                        onClick={() => void handleRetryAction(message.retryAction!)}
+                        onClick={() => void handleRetryAction(index, message.retryAction!)}
                         disabled={isLoading}
                         className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-medium text-amber-800 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
                       >
