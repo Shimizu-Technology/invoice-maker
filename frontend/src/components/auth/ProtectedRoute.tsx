@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { RedirectToSignIn } from '@clerk/react';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useAccountContext } from '../../contexts/AccountContext';
 
@@ -24,7 +23,7 @@ export default function ProtectedRoute({
   }
 
   if (isClerkEnabled && !isSignedIn) {
-    return <RedirectToSignIn />;
+    return <Navigate to="/sign-in" replace state={{ from: location }} />;
   }
 
   if (!me) {

@@ -15,6 +15,7 @@ logs/
 # Local environment files
 backend/.env
 frontend/.env.local
+.env
 
 # Temporary/generated files from development tools
 .call_count

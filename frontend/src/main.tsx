@@ -23,7 +23,14 @@ function Root() {
 
   if (isClerkEnabled) {
     return (
-      <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/sign-in">
+      <ClerkProvider
+        publishableKey={PUBLISHABLE_KEY}
+        afterSignOutUrl="/sign-in"
+        signInUrl="/sign-in"
+        signUpUrl="/sign-up"
+        signInFallbackRedirectUrl="/chat"
+        signUpFallbackRedirectUrl="/onboarding"
+      >
         {app}
       </ClerkProvider>
     )
